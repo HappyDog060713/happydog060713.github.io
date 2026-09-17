@@ -429,8 +429,7 @@
         <li><a href="#section-comparison"><span class="lang-en">3. Architecture Comparison: Pre-VLA vs. Current VLA Architecture</span><span class="lang-zh">3. 系统架构对比：前期架构 vs 现行 VLA 架构</span></a></li>
         <li><a href="#section-mujoco"><span class="lang-en">4. MuJoCo Simulation Verification & Pipeline Latency Analysis</span><span class="lang-zh">4. MuJoCo 仿真闭环验证与全链路延迟分析</span></a></li>
         <li><a href="#section-sop"><span class="lang-en">5. New Model Integration Workflow (Standard SOP)</span><span class="lang-zh">5. 新模型标准化接入作业流程（SOP）</span></a></li>
-        <li><a href="#section-validation"><span class="lang-en">6. Quality Control, Parity Verification, and Robustness</span><span class="lang-zh">6. 质量保证、数值对齐与容灾评测</span></a></li>
-        <li><a href="#section-reading"><span class="lang-en">7. Summary and References</span><span class="lang-zh">7. 总结与延伸参考</span></a></li>
+        <li><a href="#section-reading"><span class="lang-en">6. Summary and References</span><span class="lang-zh">6. 总结与延伸参考</span></a></li>
       </ul>
     </div>
 
@@ -839,63 +838,10 @@ Data Flow in Current Architecture:
         </div>
       </section>
 
-      <!-- SECTION 6: VALIDATION -->
-      <section id="section-validation">
-        <h2 class="lang-en">6. Quality Control, Parity Verification, and Robustness</h2>
-        <h2 class="lang-zh">6. 质量保证、数值对齐与容灾评测</h2>
-
-        <div class="lang-en">
-          <p>
-            Because robotic policies directly actuate physical motors, optimizing inference must never introduce numerical drift or race conditions.
-            The current architecture enforces an automated four-tier regression gate:
-          </p>
-        </div>
-        <div class="lang-zh">
-          <p>
-            由于具身策略直接驱动物理执行机构，推理优化绝不可带来数值漂移或竞态条件。
-            现行架构通过自动化的四级门禁体系保证发布质量：
-          </p>
-        </div>
-
-        <div class="table-wrapper">
-          <table>
-            <thead>
-              <tr>
-                <th><span class="lang-en">Tier</span><span class="lang-zh">验证层级</span></th>
-                <th><span class="lang-en">Verification Scope</span><span class="lang-zh">验证范围</span></th>
-                <th><span class="lang-en">Pass Criteria</span><span class="lang-zh">通过准则 (Acceptance Criteria)</span></th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td><strong>L1: Unit</strong></td>
-                <td><span class="lang-en">Contracts, Base64 serialization, state machines, and configuration schemas.</span><span class="lang-zh">语义契约定义、Base64 编解码、状态机转移与配置解析。</span></td>
-                <td><span class="lang-en">100% pass on fast CPU pytest test suite.</span><span class="lang-zh">CPU 单测全绿通过，无语法与类型警告。</span></td>
-              </tr>
-              <tr>
-                <td><strong>L2: Parity</strong></td>
-                <td><span class="lang-en">Layer-by-layer tensor activations compared against upstream checkpoints.</span><span class="lang-zh">与上游官方参考实现进行 38 层中间激活张量逐层对齐。</span></td>
-                <td><span class="lang-en">Strict BF16 parity: <code>max_abs = 0.0</code> on deterministic baselines; <code>max_abs &lt; 1e-4</code> under optimization.</span><span class="lang-zh">确定性基线达成 <code>max_abs = 0.0</code> 绝对匹配；加速路径严格控制在 <code>&lt; 1e-4</code>。</span></td>
-              </tr>
-              <tr>
-                <td><strong>L3: Benchmark</strong></td>
-                <td><span class="lang-en">Action chunk latency, VRAM allocation, and CUDA Graph launch speedup.</span><span class="lang-zh">动作块推理耗时、显存占用峰值及 CUDA Graph 加速比。</span></td>
-                <td><span class="lang-en">Substantial latency reduction over eager baselines with zero VRAM leaks.</span><span class="lang-zh">对比 Eager 原版具备明显端到端延迟降低，且显存无持续累积。</span></td>
-              </tr>
-              <tr>
-                <td><strong>L4: Fault Injection</strong></td>
-                <td><span class="lang-en">Client network dropouts, out-of-order frames, and stale observations.</span><span class="lang-zh">模拟网络闪断、丢包、观察帧乱序到达与超期请求。</span></td>
-                <td><span class="lang-en">Worker replicas recover cleanly; stale tasks superseded; deterministic error codes returned.</span><span class="lang-zh">服务稳定抛出标准异常码，过期任务平滑抢占，Worker 自动归池无僵死。</span></td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </section>
-
-      <!-- SECTION 7: READING -->
+      <!-- SECTION 6: READING -->
       <section id="section-reading">
-        <h2 class="lang-en">7. Summary and References</h2>
-        <h2 class="lang-zh">7. 总结与延伸参考</h2>
+        <h2 class="lang-en">6. Summary and References</h2>
+        <h2 class="lang-zh">6. 总结与延伸参考</h2>
 
         <div class="lang-en">
           <p>
