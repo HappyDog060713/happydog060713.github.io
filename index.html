@@ -1,56 +1,46 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>TeleFuser 架构演进与具身智能实践：从 vla_test 分支看新模型接入范式</title>
+  <title>Semantic Action Sessions & Decoupled Serving: Architecting Vision-Language-Action Models with TeleFuser</title>
   <style>
     :root {
       --bg-primary: #ffffff;
       --bg-secondary: #f8fafc;
       --bg-tertiary: #f1f5f9;
       --text-primary: #0f172a;
-      --text-secondary: #475569;
+      --text-secondary: #334155;
       --text-muted: #64748b;
       --border-color: #e2e8f0;
-      --accent-color: #2563eb;
-      --accent-hover: #1d4ed8;
-      --accent-subtle: #eff6ff;
-      --code-bg: #1e293b;
-      --code-text: #e2e8f0;
+      --accent-color: #0284c7;
+      --accent-hover: #0369a1;
+      --accent-subtle: #f0f9ff;
+      --code-bg: #0f172a;
+      --code-text: #f8fafc;
       --inline-code-bg: #f1f5f9;
       --inline-code-text: #0f172a;
-      --card-border: #cbd5e1;
-      --tag-bg: #e0e7ff;
-      --tag-text: #3730a3;
-      --success-bg: #ecfdf5;
-      --success-text: #065f46;
-      --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-      --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+      --btn-active-bg: #0284c7;
+      --btn-active-text: #ffffff;
     }
 
     [data-theme="dark"] {
-      --bg-primary: #090d16;
+      --bg-primary: #0b0f19;
       --bg-secondary: #111827;
       --bg-tertiary: #1f2937;
       --text-primary: #f9fafb;
-      --text-secondary: #9ca3af;
-      --text-muted: #6b7280;
-      --border-color: #374151;
-      --accent-color: #3b82f6;
-      --accent-hover: #60a5fa;
-      --accent-subtle: #1e293b;
+      --text-secondary: #cbd5e1;
+      --text-muted: #94a3b8;
+      --border-color: #334155;
+      --accent-color: #38bdf8;
+      --accent-hover: #7dd3fc;
+      --accent-subtle: #082f49;
       --code-bg: #030712;
       --code-text: #f3f4f6;
-      --inline-code-bg: #1f2937;
-      --inline-code-text: #93c5fd;
-      --card-border: #374151;
-      --tag-bg: #312e81;
-      --tag-text: #c7d2fe;
-      --success-bg: #064e3b;
-      --success-text: #a7f3d0;
-      --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.5);
-      --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.5);
+      --inline-code-bg: #1e293b;
+      --inline-code-text: #7dd3fc;
+      --btn-active-bg: #38bdf8;
+      --btn-active-text: #0b0f19;
     }
 
     * {
@@ -63,80 +53,126 @@
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
       background-color: var(--bg-primary);
       color: var(--text-primary);
-      line-height: 1.75;
-      font-size: 16px;
+      line-height: 1.7;
+      font-size: 15.5px;
       transition: background-color 0.2s ease, color 0.2s ease;
       -webkit-font-smoothing: antialiased;
     }
 
+    body[data-lang="en"] .lang-zh { display: none !important; }
+    body[data-lang="zh"] .lang-en { display: none !important; }
+
     .container {
-      max-width: 900px;
+      max-width: 920px;
       margin: 0 auto;
       padding: 40px 24px 80px;
     }
 
     header {
       border-bottom: 1px solid var(--border-color);
-      padding-bottom: 32px;
-      margin-bottom: 40px;
+      padding-bottom: 28px;
+      margin-bottom: 36px;
     }
 
-    .meta-bar {
+    .nav-controls {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 16px;
+      margin-bottom: 20px;
+    }
+
+    .meta-author {
       font-size: 0.9rem;
       color: var(--text-muted);
     }
 
-    .theme-toggle-btn {
+    .button-group {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .ctrl-btn {
       background: var(--bg-tertiary);
       color: var(--text-primary);
       border: 1px solid var(--border-color);
-      padding: 6px 12px;
+      padding: 5px 12px;
       border-radius: 6px;
       cursor: pointer;
-      font-size: 0.85rem;
-      display: flex;
+      font-size: 0.82rem;
+      font-weight: 500;
+      display: inline-flex;
       align-items: center;
-      gap: 6px;
+      gap: 5px;
       transition: all 0.15s ease;
     }
 
-    .theme-toggle-btn:hover {
+    .ctrl-btn:hover {
       background: var(--border-color);
     }
 
+    .lang-btn.active {
+      background: var(--btn-active-bg);
+      color: var(--btn-active-text);
+      border-color: var(--btn-active-bg);
+    }
+
     h1.post-title {
-      font-size: 2.2rem;
-      font-weight: 800;
+      font-size: 2.15rem;
+      font-weight: 700;
       line-height: 1.3;
       color: var(--text-primary);
-      margin-bottom: 16px;
+      margin-bottom: 14px;
       letter-spacing: -0.02em;
+    }
+
+    .subtitle {
+      color: var(--text-secondary);
+      font-size: 1.05rem;
+      margin-bottom: 18px;
+      line-height: 1.6;
+    }
+
+    .metric-badge-bar {
+      background-color: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 16px 20px;
+      margin: 20px 0;
+    }
+
+    .metric-title {
+      font-size: 0.92rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 6px;
+    }
+
+    .metric-desc {
+      font-size: 0.88rem;
+      color: var(--text-secondary);
+      line-height: 1.5;
     }
 
     .repo-badges {
       display: flex;
       flex-wrap: wrap;
       gap: 10px;
-      margin-top: 16px;
+      margin-top: 18px;
     }
 
     .repo-link {
       display: inline-flex;
       align-items: center;
       gap: 6px;
-      padding: 6px 12px;
+      padding: 5px 11px;
       background-color: var(--bg-secondary);
       border: 1px solid var(--border-color);
       border-radius: 6px;
-      font-size: 0.85rem;
+      font-size: 0.82rem;
       color: var(--accent-color);
       text-decoration: none;
-      font-family: ui-monospace, monospace;
-      transition: all 0.15s ease;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
     }
 
     .repo-link:hover {
@@ -148,13 +184,13 @@
       background-color: var(--bg-secondary);
       border: 1px solid var(--border-color);
       border-radius: 8px;
-      padding: 20px 24px;
-      margin: 32px 0;
+      padding: 18px 22px;
+      margin: 28px 0;
     }
 
     .toc h4 {
-      margin-bottom: 12px;
-      font-size: 1rem;
+      margin-bottom: 10px;
+      font-size: 0.88rem;
       text-transform: uppercase;
       letter-spacing: 0.05em;
       color: var(--text-muted);
@@ -165,14 +201,13 @@
     }
 
     .toc li {
-      margin: 6px 0;
+      margin: 5px 0;
     }
 
     .toc a {
       color: var(--text-secondary);
       text-decoration: none;
-      font-size: 0.95rem;
-      transition: color 0.15s ease;
+      font-size: 0.92rem;
     }
 
     .toc a:hover {
@@ -181,35 +216,29 @@
     }
 
     article h2 {
-      font-size: 1.6rem;
+      font-size: 1.5rem;
       font-weight: 700;
-      margin: 48px 0 20px;
+      margin: 44px 0 16px;
       padding-bottom: 8px;
-      border-bottom: 2px solid var(--border-color);
+      border-bottom: 1px solid var(--border-color);
       letter-spacing: -0.01em;
     }
 
     article h3 {
-      font-size: 1.25rem;
+      font-size: 1.2rem;
       font-weight: 600;
-      margin: 32px 0 14px;
+      margin: 28px 0 12px;
       color: var(--text-primary);
     }
 
-    article h4 {
-      font-size: 1.05rem;
-      font-weight: 600;
-      margin: 20px 0 10px;
-    }
-
     article p {
-      margin-bottom: 16px;
+      margin-bottom: 14px;
       color: var(--text-secondary);
     }
 
     article ul, article ol {
-      margin-bottom: 18px;
-      padding-left: 24px;
+      margin-bottom: 16px;
+      padding-left: 22px;
       color: var(--text-secondary);
     }
 
@@ -231,22 +260,22 @@
     }
 
     code {
-      font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
       font-size: 0.88em;
       background-color: var(--inline-code-bg);
       color: var(--inline-code-text);
-      padding: 2px 6px;
+      padding: 2px 5px;
       border-radius: 4px;
     }
 
     pre {
       background-color: var(--code-bg);
       color: var(--code-text);
-      padding: 16px 20px;
+      padding: 16px 18px;
       border-radius: 8px;
       overflow-x: auto;
-      margin: 20px 0;
-      font-size: 0.88rem;
+      margin: 18px 0;
+      font-size: 0.86rem;
       line-height: 1.5;
       border: 1px solid var(--border-color);
     }
@@ -259,7 +288,7 @@
 
     .table-wrapper {
       overflow-x: auto;
-      margin: 24px 0;
+      margin: 22px 0;
       border: 1px solid var(--border-color);
       border-radius: 8px;
     }
@@ -267,13 +296,14 @@
     table {
       width: 100%;
       border-collapse: collapse;
-      font-size: 0.9rem;
+      font-size: 0.88rem;
       text-align: left;
     }
 
     th, td {
-      padding: 12px 16px;
+      padding: 10px 14px;
       border-bottom: 1px solid var(--border-color);
+      vertical-align: top;
     }
 
     th {
@@ -291,371 +321,621 @@
     }
 
     .callout {
-      border-left: 4px solid var(--accent-color);
+      border-left: 3px solid var(--accent-color);
       background-color: var(--accent-subtle);
-      padding: 16px 20px;
-      border-radius: 0 8px 8px 0;
-      margin: 20px 0;
-      font-size: 0.95rem;
+      padding: 14px 18px;
+      border-radius: 0 6px 6px 0;
+      margin: 18px 0;
+      font-size: 0.92rem;
     }
 
     .callout-title {
       font-weight: 600;
       color: var(--accent-color);
       margin-bottom: 4px;
-      display: flex;
-      align-items: center;
-      gap: 6px;
     }
 
-    .commit-badge {
-      display: inline-block;
-      font-family: ui-monospace, monospace;
-      font-size: 0.8rem;
-      padding: 2px 6px;
-      border-radius: 4px;
-      background-color: var(--bg-tertiary);
-      border: 1px solid var(--border-color);
-      color: var(--accent-color);
-    }
-
-    .diagram-box {
+    .ascii-block {
       background-color: var(--bg-secondary);
       border: 1px solid var(--border-color);
-      border-radius: 8px;
-      padding: 20px;
-      margin: 24px 0;
-      font-family: ui-monospace, monospace;
-      font-size: 0.85rem;
-      line-height: 1.5;
+      border-radius: 6px;
+      padding: 16px;
+      margin: 18px 0;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 0.82rem;
+      line-height: 1.45;
       overflow-x: auto;
+      color: var(--text-secondary);
     }
 
     footer {
       border-top: 1px solid var(--border-color);
       padding-top: 24px;
-      margin-top: 60px;
-      font-size: 0.85rem;
+      margin-top: 50px;
+      font-size: 0.82rem;
       color: var(--text-muted);
       text-align: center;
     }
   </style>
 </head>
-<body>
+<body data-lang="en">
   <div class="container">
     <header>
-      <div class="meta-bar">
-        <span>作者：<strong>HappyDog0713</strong> · 发布时间：2026年9月 · 架构工程笔记</span>
-        <button class="theme-toggle-btn" id="themeToggle" onclick="toggleTheme()">
-          🌓 切换深浅模式
-        </button>
+      <div class="nav-controls">
+        <div class="meta-author">
+          <span class="lang-en">Engineering Architecture · HappyDog0713 · September 2026</span>
+          <span class="lang-zh">架构工程设计 · HappyDog0713 · 2026年9月</span>
+        </div>
+        <div class="button-group">
+          <button class="ctrl-btn lang-btn active" id="btnEn" onclick="setLanguage('en')">English</button>
+          <button class="ctrl-btn lang-btn" id="btnZh" onclick="setLanguage('zh')">中文</button>
+          <button class="ctrl-btn" id="themeToggle" onclick="toggleTheme()">🌓</button>
+        </div>
       </div>
-      <h1 class="post-title">TeleFuser 架构演进与具身智能实践：从 vla_test 分支看新模型接入范式</h1>
-      <p style="color: var(--text-secondary); font-size: 1.05rem;">
-        本文深度复盘 TeleFuser 仓库自创建 <code>vla_test</code> 分支以来的 40+ 次核心提交历程。从初始的 LingBot-VLA v2 模型对齐，到单卡服务与动静结合的 CUDA Graph 降噪加速，再到彻底重构出的“语义化动作空间”与“副本亲和会话管理（Replica-Backed Session Serving）”，全方位剖析具身智能与大模型融合架构的演进脉络，并为后续新模型（文生视频、世界模型、具身策略）的标准化接入提供实战指南。
-      </p>
+
+      <!-- ENGLISH TITLE -->
+      <div class="lang-en">
+        <h1 class="post-title">Semantic Action Sessions & Decoupled Serving: Architecting Vision-Language-Action Models with TeleFuser</h1>
+        <p class="subtitle">
+          TeleFuser is an open-source inference and serving runtime for real-time generative models and interactive world systems.
+          This article analyzes the architectural evolution of Vision-Language-Action (VLA) support on the <code>vla_test</code> branch:
+          introducing semantic action space contracts, replica-backed session leases, hybrid eager-graph denoising, and strict simulator boundary decoupling.
+        </p>
+        <div class="metric-badge-bar">
+          <div class="metric-title">1 × H100: End-to-End Real-Time Action Denoising & Headless MuJoCo Closed-Loop Verification</div>
+          <div class="metric-desc">
+            CUDA Graph action denoising reduces core inference from <strong>655.89 ms to 173.43 ms (3.78x speedup)</strong>, fitting comfortably inside an 8-step physical execution horizon (<strong>400 ms @ 20 Hz</strong>).
+            Combined with <code>execute_ready_async()</code>, inference and MuJoCo simulation overlap 100% with zero pipeline bubbles and zero simulator dependencies on the GPU inference host.
+          </div>
+        </div>
+      </div>
+
+      <!-- CHINESE TITLE -->
+      <div class="lang-zh">
+        <h1 class="post-title">语义化动作会话与仿真解耦：基于 TeleFuser 的具身智能 VLA 架构演进实践</h1>
+        <p class="subtitle">
+          TeleFuser 是一套面向实时生成模型与交互式世界系统的开源推理与服务运行架构。
+          本文基于 <code>vla_test</code> 特性分支，深入剖析具身大模型（Vision-Language-Action, VLA）在系统架构层面的演进全景：
+          从语义化动作空间契约、副本亲和会话租约（Session Lease），到动静混合 CUDA Graph 降噪加速与无头 MuJoCo 闭环仿真全链路验证。
+        </p>
+        <div class="metric-badge-bar">
+          <div class="metric-title">单卡 H100：实时动作去噪推理与无头 MuJoCo 闭环仿真验证</div>
+          <div class="metric-desc">
+            CUDA Graph 动作去噪将核心推理耗时由 <strong>655.89 ms 骤降至 173.43 ms（3.78倍加速）</strong>，远低于 8 步动作执行窗口（<strong>20 Hz 下为 400 ms</strong>）。
+            配合 <code>execute_ready_async()</code> 异步流水线，实现了模型推理与物理仿真的 100% 重叠掩盖（零停顿流水线），且推理集群对物理引擎完全零依赖解耦。
+          </div>
+        </div>
+      </div>
+
       <div class="repo-badges">
         <a href="https://github.com/Tele-AI/TeleFuser" class="repo-link" target="_blank" rel="noopener">
-          📦 Main 仓库: Tele-AI/TeleFuser
+          Upstream Main: Tele-AI/TeleFuser
         </a>
         <a href="https://github.com/Tele-AI/TeleFuser/tree/vla_test" class="repo-link" target="_blank" rel="noopener">
-          🌿 特性分支: vla_test
+          Branch: vla_test
         </a>
         <a href="https://happydog060713.github.io" class="repo-link" target="_blank" rel="noopener">
-          🏠 博客主页: happydog060713.github.io
+          Blog: happydog060713.github.io
         </a>
       </div>
     </header>
 
     <div class="toc">
-      <h4>目录索引</h4>
+      <h4 class="lang-en">Contents</h4>
+      <h4 class="lang-zh">文章目录</h4>
       <ul>
-        <li><a href="#section-intro">1. 背景引言：为什么需要 vla_test 分支？</a></li>
-        <li><a href="#section-commits">2. vla_test 演进全景：关键提交与四阶段技术突破</a></li>
-        <li><a href="#section-arch-diff">3. 架构对比：早期 TeleFuser vs 当前现行架构</a></li>
-        <li><a href="#section-new-model">4. 新模型接入实战：标准化 6 步作业流程（SOP）</a></li>
-        <li><a href="#section-conclusion">5. 总结与未来演进展望</a></li>
+        <li><a href="#section-insights"><span class="lang-en">1. Architectural Insights & Core Principles</span><span class="lang-zh">1. 核心架构认知与设计原则</span></a></li>
+        <li><a href="#section-questions"><span class="lang-en">2. Four Fundamental Questions Driving the Architecture</span><span class="lang-zh">2. 驱动架构演进的四个核心命题</span></a></li>
+        <li><a href="#section-comparison"><span class="lang-en">3. Architecture Comparison: Pre-VLA vs. Current VLA Architecture</span><span class="lang-zh">3. 系统架构对比：前期架构 vs 现行 VLA 架构</span></a></li>
+        <li><a href="#section-mujoco"><span class="lang-en">4. MuJoCo Simulation Verification & Pipeline Latency Analysis</span><span class="lang-zh">4. MuJoCo 仿真闭环验证与全链路延迟分析</span></a></li>
+        <li><a href="#section-sop"><span class="lang-en">5. New Model Integration Workflow (Standard SOP)</span><span class="lang-zh">5. 新模型标准化接入作业流程（SOP）</span></a></li>
+        <li><a href="#section-validation"><span class="lang-en">6. Quality Control, Parity Verification, and Robustness</span><span class="lang-zh">6. 质量保证、数值对齐与容灾评测</span></a></li>
+        <li><a href="#section-reading"><span class="lang-en">7. Summary and References</span><span class="lang-zh">7. 总结与延伸参考</span></a></li>
       </ul>
     </div>
 
     <article>
-      <!-- SECTION 1 -->
-      <section id="section-intro">
-        <h2>1. 背景引言：为什么需要 vla_test 分支？</h2>
-        <p>
-          <a href="https://github.com/Tele-AI/TeleFuser" target="_blank">TeleFuser</a> 是中国电信人工智能研究院（Tele-AI）开源的高吞吐多模态扩散生成与实时流式计算推理框架。在早期阶段，TeleFuser 的主要重心集中于标准视频生成（如 Wan2.1、LTX-Video）以及流式世界模型（LingBot-World、Abot-World）。这些模型典型的推理范式是：用户发起一次性的文本/图像输入，经过耗时较长、多步 Denoise 的生成过程，返回完整视频或音频文件。
-        </p>
-        <p>
-          然而，随着<strong>具身智能（Embodied AI）</strong>与视觉-语言-动作大模型（Vision-Language-Action, VLA，如 <code>LingBot-VLA v2</code>）的兴起，传统的“无状态、批处理”推理服务遇到了根本性挑战：
-        </p>
-        <ul>
-          <li><strong>交互模式演变</strong>：从单次 Request-Response 演变成多步、有状态、低延迟的<strong>持续闭环交互会话（Session）</strong>。</li>
-          <li><strong>动作时序性与抢占性</strong>：机械臂控制必须具备严格的时间衰减（Age Check）、TTL 机制，并在新观测到达时支持对过时动作序列的优雅抢占（Supersede）。</li>
-          <li><strong>仿真环境解耦</strong>：机械臂控制通常对接 RoboTwin、MuJoCo 或真实机器人本体，若服务端直接绑定具体的物理引擎（如 SAPIEN/Vulkan/ROS），会导致推理服务器环境极为臃肿且不可维护。</li>
-        </ul>
-        <p>
-          基于上述需求，开发者建立了 <a href="https://github.com/Tele-AI/TeleFuser/tree/vla_test" target="_blank"><code>vla_test</code> 分支</a>。历经近两个月的持续迭代，不仅圆满完成了 LingBot-VLA v2 的高性能推理与服务化，更推动了 TeleFuser 整体架构在<strong>会话管理、动作空间语义化与仿真解耦</strong>上的重构升级。
-        </p>
-      </section>
+      <!-- SECTION 1: INSIGHTS -->
+      <section id="section-insights">
+        <h2 class="lang-en">1. Architectural Insights & Core Principles</h2>
+        <h2 class="lang-zh">1. 核心架构认知与设计原则</h2>
 
-      <!-- SECTION 2 -->
-      <section id="section-commits">
-        <h2>2. vla_test 演进全景：关键提交与四阶段技术突破</h2>
-        <p>
-          通过检查 <code>vla_test</code> 自初始化以来的全部提交记录，整个演进历程可清晰划分为四个阶段：
-        </p>
-
-        <div class="diagram-box">
-阶段一：基线构建与严格对齐 (7月下旬 - 8月上旬)
-  f964169 (Init) ➔ 87960ac (Base Support) ➔ 8d03aa0 (Strict Parity) ➔ 3c996d6 (Trim Training Code)
-                     ⬇
-阶段二：服务工程化与 CUDA Graph 突破 (8月中旬 - 8月下旬)
-  3b49c71 (Native Service) ➔ 878aa1b (CUDA Graph Denoise) ➔ ff2f0f7 (Batch Camera) ➔ f02ec54 (Release Suite)
-                     ⬇
-阶段三：RoboTwin 仿真适配探索与痛点反思 (8月下旬 - 9月上旬)
-  af644c4 (RoboTwin Adapter) ➔ 4e19bf3 (Remote Contract) ➔ 7801f53 (Action Chunks)
-                     ⬇
-阶段四：架构质变——通用语义化 VLA 会话与仿真解耦 (9月中旬)
-  4e44652 (Semantic Space) ➔ d6383a4 (Replica-Backed Pool) ➔ 9504db8 (Generic WS) ➔ 733aad3 (Retire Legacy)
+        <div class="lang-en">
+          <p>
+            VLA models (such as <code>LingBot-VLA v2</code>) synthesize multi-camera visual feeds, proprioceptive joint states,
+            and natural language instructions to predict continuous action trajectories (e.g., a <code>50 x 55</code> normalized action chunk).
+            Deploying VLA policies exposed fundamental limitations in traditional diffusion serving pipelines.
+            Through the architectural restructuring on <code>vla_test</code>, three architectural principles were established:
+          </p>
+          <ul>
+            <li><strong>Explicit Semantics Over Implicit Shapes</strong>: Raw tensor dimensions (e.g., <code>[50, 55]</code>) carry zero physical meaning. Downstream robots must never infer joint order, normalization bounds, or coordinate systems by convention. Semantics must be encoded as explicit, typed contracts (<code>ActionSpaceSpec</code> / <code>ObservationSpaceSpec</code>) verified at session handshake.</li>
+            <li><strong>Stateless Task Queues vs. Stateful Session Leases</strong>: Robot control is an interactive closed-loop feedback session. Traditional stateless <code>acquire()</code> / <code>release()</code> pool scheduling causes resource thrashing and lacks preemption. The server runtime requires replica-affine session leases with deterministic preemption (superseding stale predictions).</li>
+            <li><strong>Complete Decoupling of Inference and Simulator Runtimes</strong>: Physics simulators (RoboTwin, SAPIEN, Vulkan, MuJoCo, ROS) introduce heavyweight binary environments and divergent CUDA contexts. Injecting simulation libraries into inference GPU containers introduces instability. Inference nodes must run pure PyTorch, communicating across a transport-neutral protocol (WebSocket / JSON-Base64) to external simulator clients.</li>
+          </ul>
         </div>
 
-        <h3>阶段一：基线引入、显存瘦身与严格精度对齐（2026.07.28 ~ 2026.08.05）</h3>
-        <p>
-          此阶段的目标是将官方的 LingBot-VLA v2 6B 模型以最轻量的方式引入 TeleFuser，建立黄金标准。
-        </p>
-        <ul>
-          <li><span class="commit-badge">f964169</span> <code>feat: lingbot-vla-v2 init</code> 与 <span class="commit-badge">87960ac</span> <code>feat: add LingBot VLA v2 base inference support</code>：初始化模型代码骨架，引入 Qwen3-VL 视觉/语言编码器与动作去噪 DiT。</li>
-          <li><span class="commit-badge">8d03aa0</span> <code>test(vla): establish official upstream parity</code>：建立官方上游比对测试。在 BF16 精度下完成了 38 个关键层激活张量的逐层验证，达成严格的 <code>max_abs = 0.0</code> 绝对对齐。</li>
-          <li><span class="commit-badge">3c996d6</span> <code>refactor(vla): trim training-only runtime code</code> 与 <span class="commit-badge">2d40ee2</span> <code>refactor(vla): prune legacy LingBot model code</code>：大刀阔斧剥离上游训练专用的冗余代码与废弃权重，确立推理专用精简目录。</li>
-          <li><span class="commit-badge">3b49c71</span> / <span class="commit-badge">953ec3f</span> / <span class="commit-badge">442106c</span>：构建单卡原生结构化动作推理服务，并优化首版单卡调度时延。</li>
-        </ul>
-
-        <h3>阶段二：首期合并、CUDA Graph 动静结合加速与全自动化评测（2026.08.06 ~ 2026.08.27）</h3>
-        <p>
-          在完成 PR #28 合并后，工作重心转向工业级吞吐优化与发布级质量保障。
-        </p>
-        <ul>
-          <li><span class="commit-badge">878aa1b</span> <strong><code>feat(vla): add CUDA Graph action denoising</code></strong>：<strong>关键性能拐点</strong>。由于 VLA 输入包含动态长度的多模态视觉提示词，而动作去噪循环（Action Denoising Loop）是固定 Shape（如 <code>50 x 55</code>）。团队创造性地采用<strong>“动态视觉 Prefix 走 Eager 模式 + 固定动作去噪循环录制为 CUDA Graph”</strong>的动静结合机制，消除了高频小算子的 Kernel Launch 开销，大幅压低推理延迟。</li>
-          <li><span class="commit-badge">ff2f0f7</span> <code>perf(lingbot-vla-v2): batch camera preprocessing</code>：将头部（High）、左手腕（Left Wrist）、右手腕（Right Wrist）三路相机的预处理合并批处理，减少显存搬移。</li>
-          <li><span class="commit-badge">348b8ca</span> / <span class="commit-badge">3f9bfe8</span> / <span class="commit-badge">34b98f9</span>：优化 SDPA 注意力机制，解决 Rotary Embedding 和 BF16 视觉插值在不同后端下的细微漂移问题。</li>
-          <li><span class="commit-badge">1eafa09</span> / <span class="commit-badge">839a776</span>：引入 TorchAO 与 bitsandbytes 在线量化支持（INT8 / NF4 / FP8），使 6B 模型能够平稳运行于更低显存卡型上。</li>
-          <li><span class="commit-badge">f02ec54</span> / <span class="commit-badge">326b2d5</span>：固化全自动化发布验证套件（Release Validation Suite），涵盖严苛的对齐、基准与故障容灾测试。</li>
-        </ul>
-
-        <h3>阶段三：RoboTwin 仿真适配探索与反思（2026.08.31 ~ 2026.09.08）</h3>
-        <p>
-          为了验证策略在模拟机械臂上的真实控制效果，团队开展了仿真适配：
-        </p>
-        <ul>
-          <li><span class="commit-badge">af644c4</span> / <span class="commit-badge">4e19bf3</span> / <span class="commit-badge">7801f53</span>：构建了基于 RoboTwin MessagePack 协议的专用动作服务器，支持远端推理与动作分块（Action Chunks）流水线调度。</li>
-          <li><strong>痛点暴露与反思</strong>：在实践中发现，将 MessagePack RPC、RoboTwin 的专用坐标系硬编码进推理端，导致服务端产生了对下游仿真环境的紧耦合；一旦接入新机械臂（如 ALOHA、Franka）或新仿真器（MuJoCo、IsaacGym），就需要重写大量网络与协议胶水代码。</li>
-        </ul>
-
-        <h3>阶段四：架构质变——通用语义化 VLA 会话与仿真解耦（2026.09.10 ~ 2026.09.15）</h3>
-        <p>
-          这是 <code>vla_test</code> 分支最辉煌的架构演进，彻底重塑了 TeleFuser 的服务形态：
-        </p>
-        <ul>
-          <li><span class="commit-badge">4e44652</span> <strong><code>feat(vla): add semantic action session framework</code></strong>：构建了全新的 <code>telefuser.vla</code> 顶层抽象。提出 <strong>绝不以张量维度盲猜动作含义</strong> 的原则，定义了强类型的 <code>ActionSpaceSpec</code> 和 <code>ObservationSpaceSpec</code>，解耦了策略模型（<code>VLAPolicy</code>）与机器人本体（<code>EmbodimentAdapter</code>）。</li>
-          <li><span class="commit-badge">d6383a4</span> <strong><code>feat(vla): add replica-backed session serving</code></strong>：对底层的 <code>PipelinePool</code> 进行了突破性改造。在保留传统无状态 <code>acquire()</code> 任务调度的同时，扩展了具有<strong>显存/进程亲和性的有状态会话租约</strong>（<code>open_session</code> / <code>acquire_session</code> / <code>close_session</code>），保证控制流独占与状态隔离。</li>
-          <li><span class="commit-badge">9504db8</span> <strong><code>feat(vla): complete generic session integration</code></strong>：构建了通用的 <code>/v1/vla/session</code> WebSocket 双向协议，采用标准 JSON 封装 Base64 编码的紧凑张量，支持 <code>OPEN</code>、<code>PREDICT</code>、<code>RESET</code>、<code>CLOSE</code> 全生命周期控制与超期丢弃（Superseded）。</li>
-          <li><span class="commit-badge">bce0702</span> / <span class="commit-badge">3d28619</span>：引入纯 Python、无厚重环境依赖的 MuJoCo 本地快速验证路径，并提供客户端 Chunk 状态机（<code>SimulatorChunkRuntime</code>）。</li>
-          <li><span class="commit-badge">733aad3</span> <strong><code>refactor(vla): retire legacy RoboTwin inference endpoint</code></strong>：果断废弃并移除了过往紧耦合的 RoboTwin 专用 MessagePack 服务端，正式宣布进入标准化、通用语义会话时代！</li>
-        </ul>
+        <div class="lang-zh">
+          <p>
+            具身大模型（如 <code>LingBot-VLA v2</code>）整合多路相机视觉流、本体关节状态与自然语言指令，
+            输出连续动作轨迹块（如 <code>50 x 55</code> 维度的归一化动作序列）。
+            将具身策略接入传统的扩散模型推理服务时，暴露出了结构性矛盾。
+            通过 <code>vla_test</code> 分支上的架构重构，确立了三条核心设计原则：
+          </p>
+          <ul>
+            <li><strong>显式语义契约优先于张量维度盲猜</strong>：无物理含义的张量维度（如 <code>[50, 55]</code>）极易因坐标系、关节排列或单位错位导致机械臂失控。系统引入强类型的 <code>ActionSpaceSpec</code> 与 <code>ObservationSpaceSpec</code>，在建立连接时完成双向语义校验。</li>
+            <li><strong>无状态任务排队 vs 有状态会话租约</strong>：机器人控制是连续的多步闭环控制流。传统的无状态 <code>acquire() / release()</code> 调度无法维护长时程交互亲和性，亦无法支持动作抢占。系统底层必须提供基于副本绑定的会话租约（Session Lease），并支持对陈旧推理结果的主动抢占（Supersede）。</li>
+            <li><strong>严格解耦模型推理与物理仿真边界</strong>：物理仿真器（RoboTwin、SAPIEN、Vulkan、MuJoCo、ROS）具有高度专有且复杂的二进制依赖与图形驱动栈。将仿真库打包进推理服务端会导致运行环境臃肿且难以横向扩容。服务端必须保持纯 PyTorch 核心，通过传输中立的通用 WebSocket 协议与远端仿真环境交互。</li>
+          </ul>
+        </div>
       </section>
 
-      <!-- SECTION 3 -->
-      <section id="section-arch-diff">
-        <h2>3. 架构对比：早期 TeleFuser vs 当前现行架构</h2>
-        <p>
-          从 <code>main</code> 到 <code>vla_test</code> 的淬炼，TeleFuser 的项目形态发生了结构性跃升。下表总结了关键维度的演化对比：
-        </p>
+      <!-- SECTION 2: FOUR QUESTIONS -->
+      <section id="section-questions">
+        <h2 class="lang-en">2. Four Fundamental Questions Driving the Architecture</h2>
+        <h2 class="lang-zh">2. 驱动架构演进的四个核心命题</h2>
+
+        <div class="lang-en">
+          <h3>Question 1: Why does stateless request-response fail for closed-loop embodied AI?</h3>
+          <p>
+            Standard video or image generation handles isolated, batch requests: a prompt arrives, a long denoising sequence runs,
+            and artifacts return. Closed-loop robotics operates on tight control budgets. If network latency delays an observation,
+            running inference on that stale state wastes GPU cycles and risks physical collisions.
+            The architecture resolves this by introducing a <strong>Deterministic Chunk State Machine</strong>:
+            the server tracks <code>PENDING</code>, <code>READY</code>, <code>SUPERSEDED</code>, <code>EXPIRED</code>, and <code>REJECTED</code>.
+            When a new observation arrives before the previous inference finishes, the runtime preempts and supersedes the outdated work.
+          </p>
+
+          <h3>Question 2: How do semantic action spaces prevent physical control errors?</h3>
+          <p>
+            Upstream VLA implementations frequently couple model weights directly to a specific robot's joint order.
+            TeleFuser decouples this into two formal abstractions:
+          </p>
+          <ul>
+            <li><code>VLAPolicy</code>: Represents the model's native prediction space (e.g., canonical <code>55</code>-dimensional representation).</li>
+            <li><code>EmbodimentAdapter</code>: Encodes raw robot observations and maps canonical predictions to physical robot joints (e.g., dual-arm <code>14</code>-dimensional absolute coordinates).</li>
+          </ul>
+          <p>
+            Neither component guesses formats. Every session handshake validates representation, dimension names, units, coordinate frames, and control rate.
+          </p>
+
+          <h3>Question 3: How does hybrid eager-graph execution resolve latency in multimodal diffusion policies?</h3>
+          <p>
+            Full-model CUDA Graph capture fails on VLA models because language prompts and visual image resolutions vary dynamically.
+            Conversely, pure PyTorch eager mode incurs severe kernel launch latency during the multi-step action denoising loop (where shapes are small and static, e.g., <code>50 x 55</code>).
+            TeleFuser implements a <strong>Hybrid Execution Architecture</strong>:
+            the dynamic multimodal visual prefix runs eagerly, while the fixed-horizon iterative action-denoising loop is captured into a reusable CUDA Graph.
+          </p>
+
+          <h3>Question 4: How does replica-backed session leasing scale across concurrent robot environments?</h3>
+          <p>
+            Instead of spinning up standalone server processes for each robot, <code>PipelinePool</code> is extended with replica-backed session leases.
+            Calling <code>open_session</code> assigns a dedicated worker replica to a <code>session_id</code>.
+            All calls through <code>acquire_session</code> route exclusively to that worker, maintaining deterministic lifecycle management while preserving standard stateless capacity for non-VLA tasks.
+          </p>
+        </div>
+
+        <div class="lang-zh">
+          <h3>命题一：为什么传统的无状态“请求-响应”模式无法胜任具身闭环控制？</h3>
+          <p>
+            常规多模态生成模型处理的是离散、独立的单次计算任务：接收 Prompt，启动多步迭代，最终返回文件。
+            然而，具身智能控制对时效性要求极高。如果网络延迟导致历史帧滞后到达，若仍盲目计算陈旧观测，不仅白白消耗算力，还会导致机械臂做出危险的过期动作。
+            现行架构通过<strong>确定性动作块状态机</strong>解决了该问题：
+            在服务端跟踪 <code>PENDING</code>、<code>READY</code>、<code>SUPERSEDED</code>、<code>EXPIRED</code> 与 <code>REJECTED</code>。
+            一旦客户端推送了更新的观察帧，未完成的过期推理任务将被直接抢占并标记为丢弃。
+          </p>
+
+          <h3>命题二：语义化动作空间如何从根源上杜绝物理控制错误？</h3>
+          <p>
+            过往模型代码往往将模型权重与特定机械臂的关节定义紧密硬编码在一起。
+            TeleFuser 将其解耦为两层抽象：
+          </p>
+          <ul>
+            <li><code>VLAPolicy</code>：仅代表模型本身的理论输出空间（如 <code>55</code> 维度的规范化表示）。</li>
+            <li><code>EmbodimentAdapter</code>：负责将机器人传感器的真实输入编码，并将模型输出解码映射到特定机械臂的具体物理关节（如双臂 <code>14</code> 自由度的绝对坐标）。</li>
+          </ul>
+          <p>
+            两者通过强类型的协议进行校验，在握手阶段即完成维度名称、物理单位、坐标系及控制频率的静态合规检查。
+          </p>
+
+          <h3>命题三：动静混合 CUDA Graph 如何破局扩散策略的时延瓶颈？</h3>
+          <p>
+            对整个模型进行完整的 CUDA Graph Capture 是不可行的，因为多模态视觉 Prompt 长度和图像分辨率具有动态性；
+            但若完全采用 PyTorch Eager 模式，由于动作去噪循环步数多、且单步张量较小（如 <code>50 x 55</code>），CPU-GPU 间的 Kernel Launch 开销会占据大量耗时。
+            架构引入了<strong>动静结合的混合执行机制</strong>：
+            动态的多模态视觉编码前缀保持 Eager 模式执行，而步数与 Shape 严格固定的动作去噪扩散循环则被录制为可复用的 CUDA Graph。
+          </p>
+
+          <h3>命题四：副本亲和会话租约（Session Lease）如何支撑多并发仿真与实体机器人？</h3>
+          <p>
+            无需为每个机械臂环境单独启动独立的服务器进程，底层的 <code>PipelinePool</code> 扩展了副本亲和会话租约功能。
+            客户端通过 <code>open_session</code> 从空闲池中申请并独占一个 Worker 副本；
+            后续的所有控制流指令（<code>acquire_session</code>）均直接且排他性地路由至该 Worker，连接断开时自动回收，兼顾了有状态独占与无状态并发。
+          </p>
+        </div>
+      </section>
+
+      <!-- SECTION 3: ARCHITECTURE COMPARISON -->
+      <section id="section-comparison">
+        <h2 class="lang-en">3. Architecture Comparison: Pre-VLA vs. Current VLA Architecture</h2>
+        <h2 class="lang-zh">3. 系统架构对比：前期架构 vs 现行 VLA 架构</h2>
+
+        <div class="ascii-block">
+Data Flow in Current Architecture:
+  Robot Observation (Images, Proprioception State, Task Text)
+         |
+         v
+  EmbodimentAdapter.encode_observation
+         |  [ObservationSpaceSpec Verification]
+         v
+  VLAPolicy.predict (Eager Visual Prefix + CUDA Graph Denoising)
+         |
+         v
+  ModelActionChunk (Canonical Normalized Actions)
+         |
+         v
+  EmbodimentAdapter.decode_actions
+         |  [ActionSpaceSpec Verification]
+         v
+  RobotActionChunk (Physical Joint Angles, Velocities, Gripper)
+         |
+         v
+  SimulatorChunkRuntime (Client-Side State Machine: Age Check, Superseding, Safety Clamp)
+         |
+         v
+  SimulatorAdapter.execute (MuJoCo / RoboTwin / Physical Robot)
+        </div>
 
         <div class="table-wrapper">
           <table>
             <thead>
               <tr>
-                <th>架构维度</th>
-                <th>早期项目架构 (Pre-VLA Baseline)</th>
-                <th>当前现行架构 (Current VLA-Ready)</th>
+                <th><span class="lang-en">Dimension</span><span class="lang-zh">架构维度</span></th>
+                <th><span class="lang-en">Pre-VLA Architecture</span><span class="lang-zh">前期架构 (Pre-VLA Baseline)</span></th>
+                <th><span class="lang-en">Current VLA Architecture</span><span class="lang-zh">当前现行架构 (Current VLA-Ready)</span></th>
               </tr>
             </thead>
             <tbody>
               <tr>
-                <td><strong>模型模态覆盖</strong></td>
-                <td>侧重单向离线生成的视频模型 (Wan2.1, LTX-Video, HunyuanVideo) 与文本图像生成。</td>
-                <td><strong>全模态融合矩阵</strong>：离线扩散视频 + 交互式流式世界模型 (LiveKit WebRTC) + 具身智能闭环控制 (VLA WebSocket)。</td>
+                <td><strong><span class="lang-en">Action Space</span><span class="lang-zh">动作空间契约</span></strong></td>
+                <td><span class="lang-en">Raw float arrays (e.g. <code>[50, 55]</code>). Coordinate systems and normalization assumed implicitly.</span><span class="lang-zh">透传裸张量（如 <code>[50, 55]</code>），下游代码仅凭经验硬编码解析坐标系与关节顺序。</span></td>
+                <td><strong><code>ActionSpaceSpec</code></strong>: <span class="lang-en">Explicit dimension names, units (rad/m), coordinate frames, control Hz, and unnormalization IDs.</span><span class="lang-zh">强类型 <code>ActionSpaceSpec</code>：显式指定关节名称、物理单位、基坐标系、控制频率与反归一化规范。</span></td>
               </tr>
               <tr>
-                <td><strong>服务池与会话调度</strong></td>
-                <td><strong>纯无状态调度</strong>：<code>PipelinePool</code> 仅支持 <code>acquire()</code> / <code>release()</code>。多个请求彼此孤立，无持久化上下文。</td>
-                <td><strong>双模会话池化</strong>：既支持无状态任务队列，又支持<strong>副本亲和会话租约（Session Lease）</strong>，通过 <code>session_id</code> 锁定工作进程，断连自动回收。</td>
+                <td><strong><span class="lang-en">Observation Space</span><span class="lang-zh">观测空间契约</span></strong></td>
+                <td><span class="lang-en">Unstructured dictionaries lacking channel, layout, or clock domain checks.</span><span class="lang-zh">非结构化字典，缺乏通道布局（HWC/CHW）与单调时钟域校验。</span></td>
+                <td><strong><code>ObservationSpaceSpec</code></strong>: <span class="lang-en">Strict image channels, layout declarations, and nanosecond monotonic timestamp verification.</span><span class="lang-zh">结构化 <code>ObservationSpaceSpec</code>：严格验证图像通道、布局及纳秒级单调时钟源。</span></td>
               </tr>
               <tr>
-                <td><strong>动作与传感器契约</strong></td>
-                <td>弱契约或硬编码：直接透传无物理含义的张量（如 <code>[50, 55]</code>），上下游依赖隐式约定，容易因坐标系或关节顺序错位而炸机。</td>
-                <td><strong>强类型语义契约</strong>：引入 <code>ActionSpaceSpec</code> 与 <code>ObservationSpaceSpec</code>。在会话建立阶段自动校验坐标系、单位、控制频率与归一化方式。</td>
+                <td><strong><span class="lang-en">Serving & Scheduling</span><span class="lang-zh">服务与会话调度</span></strong></td>
+                <td><span class="lang-en">Purely stateless pool <code>acquire() / release()</code>; unable to maintain persistent robot affinity.</span><span class="lang-zh">纯无状态调度：<code>PipelinePool</code> 仅支持瞬时出入池，无法维持长时程交互亲和性。</span></td>
+                <td><strong><span class="lang-en">Replica-Backed Session Leases</span><span class="lang-zh">副本亲和会话租约</span></strong>: <span class="lang-en">Worker replica bound exclusively to a <code>session_id</code> with auto-release on disconnect.</span><span class="lang-zh">支持 <code>open_session</code> 锁定独占副本，会话内串行执行，断开连接自动归还资源。</span></td>
               </tr>
               <tr>
-                <td><strong>仿真器/外部依赖边界</strong></td>
-                <td>仿真依赖反向污染服务端：推理服务曾直接引用特定仿真库与私有 RPC 协议（如 MessagePack）。</td>
-                <td><strong>传输中立与零污染</strong>：服务端仅保留纯 PyTorch 核心；仿真器作为客户端通过 WebSocket 交互，配套轻量无依赖的适配层。</td>
+                <td><strong><span class="lang-en">Network Protocol</span><span class="lang-zh">通信协议规范</span></strong></td>
+                <td><span class="lang-en">Vendor-specific MessagePack RPC coupled directly to RoboTwin server code.</span><span class="lang-zh">上游私有 MessagePack RPC，网络契约与特定仿真器高度绑定。</span></td>
+                <td><strong><span class="lang-en">Generic WebSocket (<code>/v1/vla/session</code>)</span><span class="lang-zh">通用 WebSocket 协议</span></strong>: <span class="lang-en">Versioned JSON wrapping Base64 typed binary payloads with standard control frames.</span><span class="lang-zh">标准化 JSON 封装 Base64 编码高维张量，支持 <code>OPEN</code>、<code>PREDICT</code>、<code>RESET</code>、<code>CLOSE</code> 全生命周期控制。</span></td>
               </tr>
               <tr>
-                <td><strong>执行与加速引擎</strong></td>
-                <td>基本依赖 PyTorch Eager 模式，小尺寸短序列推理由于 CUDA Kernel 启动开销而遭遇瓶颈。</td>
-                <td><strong>动静结合混合编译</strong>：动态多模态前缀（Eager）+ 固定去噪循环（CUDA Graph），深度结合 SDPA、Sol-Attn 及 FP8/NF4 量化。</td>
+                <td><strong><span class="lang-en">Simulator Boundary</span><span class="lang-zh">仿真环境隔离</span></strong></td>
+                <td><span class="lang-en">Simulation engines (SAPIEN / Vulkan) present within the inference server environment.</span><span class="lang-zh">推理服务端直接导入图形渲染与物理引擎依赖，环境耦合严重。</span></td>
+                <td><strong><span class="lang-en">Zero Simulator Dependencies</span><span class="lang-zh">零仿真环境污染</span></strong>: <span class="lang-en">Inference node runs pure PyTorch. Simulators run on external clients via callback adapters.</span><span class="lang-zh">推理机只保留纯净 PyTorch 算力；物理引擎作为远端客户端接入，零依赖污染。</span></td>
               </tr>
               <tr>
-                <td><strong>动作时序状态机</strong></td>
-                <td>无时序概念：下游拿到数据后直接执行，网络抖动或丢包时可能执行过期动作。</td>
-                <td><strong>客户端时序状态机</strong>：<code>SimulatorChunkRuntime</code> 严格跟踪 PENDING、READY、EXECUTING、SUPERSEDED，杜绝执行陈旧指令。</td>
+                <td><strong><span class="lang-en">Execution Engine</span><span class="lang-zh">推理执行引擎</span></strong></td>
+                <td><span class="lang-en">Full eager execution suffering from severe small-kernel launch overhead.</span><span class="lang-zh">全 Eager 执行，高频短动作序列推理受制于 CPU-GPU Kernel Launch 调度开销。</span></td>
+                <td><strong><span class="lang-en">Hybrid CUDA Graph</span><span class="lang-zh">动静结合 CUDA Graph</span></strong>: <span class="lang-en">Dynamic visual prefix executed eagerly; fixed-horizon diffusion denoising captured in CUDA Graph.</span><span class="lang-zh">动态视觉提示词走 Eager 模式，固定步长动作去噪循环录制为 CUDA Graph。</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- SECTION 4: MUJOCO SIMULATION & LATENCY -->
+      <section id="section-mujoco">
+        <h2 class="lang-en">4. MuJoCo Simulation Verification & Pipeline Latency Analysis</h2>
+        <h2 class="lang-zh">4. MuJoCo 仿真闭环验证与全链路延迟分析</h2>
+
+        <div class="lang-en">
+          <p>
+            To rigorously prove transport neutrality and simulator independence, the <code>vla_test</code> branch introduces
+            a full, standalone headless MuJoCo validation stack (<code>telefuser.integrations.sim.mujoco</code> and <code>examples/lingbot_vla_v2/lingbot_vla_v2_mujoco.py</code>).
+            It isolates MuJoCo and OSMesa rendering inside an uncommitted virtual environment directory (<code>.venv-mujoco-libs</code>),
+            requiring zero system <code>apt install</code> privileges and keeping inference containers clean.
+          </p>
+          <p>
+            The setup models an ALOHA-Agilex dual-arm tabletop manipulation scene:
+          </p>
+          <ul>
+            <li><strong>Kinematic Bindings</strong>: Maps 12 revolute arm joints (6 left, 6 right) and 2 dual-finger parallel grippers into the 14-dimensional <code>absolute_qpos</code> contract.</li>
+            <li><strong>Physics & Multi-Camera Rendering</strong>: Integrates MuJoCo's native integrator with PD torque control (timestep $\Delta t = 0.002\text{ s}$, 5 substeps per action step = 10 ms control step). Three virtual cameras (High, Left Wrist, Right Wrist) render $256 \times 256$ RGB frames via software OSMesa.</li>
+            <li><strong>Two Verification Modes</strong>:
+              <ul>
+                <li><code>--mode local</code>: Direct in-process verification of URDF compilation, PD control stability, and multi-camera headless frame rendering without loading VLA weights.</li>
+                <li><code>--mode websocket</code>: Full closed-loop real-time simulation over <code>ws://127.0.0.1:8000/v1/vla/session</code>, connecting <code>AsyncVLAClient</code>, <code>SimulatorChunkRuntime</code>, and <code>MuJoCoSimulatorAdapter</code>.</li>
+              </ul>
+            </li>
+          </ul>
+
+          <h3>Closed-Loop Latency Budget & Zero-Bubble Pipelining</h3>
+          <p>
+            In closed-loop physical execution, the time required to generate an action chunk must never exceed the physical duration of the chunk being executed.
+            The table below shows the measured latency budget on an H100 GPU coupled to the headless MuJoCo environment:
+          </p>
+        </div>
+
+        <div class="lang-zh">
+          <p>
+            为严格证实通用会话协议（<code>/v1/vla/session</code>）与语义契约的传输中立性与仿真解耦能力，
+            <code>vla_test</code> 分支构建了完整的本地无头 MuJoCo 仿真验证套件（<code>telefuser.integrations.sim.mujoco</code> 与 <code>examples/lingbot_vla_v2/lingbot_vla_v2_mujoco.py</code>）。
+            该套件通过独立的本地动态库目录（<code>.venv-mujoco-libs</code>）自包含加载 MuJoCo 与 OSMesa，无需 <code>sudo apt install</code> 权限，确保推理环境零污染。
+          </p>
+          <p>
+            仿真场景基于 ALOHA-Agilex 双臂桌面抓取任务建模：
+          </p>
+          <ul>
+            <li><strong>运动学映射</strong>：将双臂 12 个旋转关节与 2 个平行夹爪联合映射至 14 维 <code>absolute_qpos</code> 语义契约空间。</li>
+            <li><strong>物理步进与多路渲染</strong>：采用 MuJoCo 物理积分器与关节 PD 力矩控制（单物理步长 $\Delta t = 0.002\text{ s}$，每动作步执行 5 个子步 = 10 ms 控制周期）。通过 OSMesa 离屏渲染头部（High）、左腕、右腕三路 $256 \times 256$ RGB 图像。</li>
+            <li><strong>双重验证模式</strong>：
+              <ul>
+                <li><code>--mode local</code>：进程内极速物理冒烟测试，仅验证 URDF 解析、PD 控制动力学与三路相机渲染，无需加载 6B 模型权重。</li>
+                <li><code>--mode websocket</code>：真正的端到端实时闭环仿真，通过 <code>ws://127.0.0.1:8000/v1/vla/session</code> 将 <code>AsyncVLAClient</code>、客户端状态机 <code>SimulatorChunkRuntime</code> 与 <code>MuJoCoSimulatorAdapter</code> 联调闭环。</li>
+              </ul>
+            </li>
+          </ul>
+
+          <h3>闭环全链路时延预算与“零气泡”流水线掩盖</h3>
+          <p>
+            在实体控制与物理仿真中，生成动作块的端到端耗时必须严格小于当前动作块的实际物理执行时间，否则机械臂将陷入周期性悬停等待（Execution Bubble）。
+            下表给出了在单卡 H100 推理机上实测的完整链路延迟预算：
+          </p>
+        </div>
+
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th><span class="lang-en">Pipeline Stage</span><span class="lang-zh">全链路阶段</span></th>
+                <th><span class="lang-en">Component / Implementation</span><span class="lang-zh">执行组件 / 实现技术</span></th>
+                <th><span class="lang-en">Latency (H100)</span><span class="lang-zh">实测耗时 (H100)</span></th>
+                <th><span class="lang-en">Notes</span><span class="lang-zh">工程说明</span></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong><span class="lang-en">1. Sim Sensing & Rendering</span><span class="lang-zh">1. 仿真状态观测与渲染</span></strong></td>
+                <td><code>MuJoCoSimulatorAdapter.observe()</code></td>
+                <td>~12.4 ms</td>
+                <td><span class="lang-en">3-camera OSMesa 256x256 rendering + 14-dim joint state reading.</span><span class="lang-zh">三路 256x256 相机无头渲染 + 14 维关节状态采样。</span></td>
+              </tr>
+              <tr>
+                <td><strong><span class="lang-en">2. Observation Ingress</span><span class="lang-zh">2. 观测数据网络上行传输</span></strong></td>
+                <td><code>/v1/vla/session (WebSocket)</code></td>
+                <td>~4.2 ms</td>
+                <td><span class="lang-en">Base64 encoded typed image tensors over local loopback.</span><span class="lang-zh">经本地环回网络发送 JSON-Base64 封装的紧凑二进制张量。</span></td>
+              </tr>
+              <tr>
+                <td><strong><span class="lang-en">3. Vision Prefix Encoding</span><span class="lang-zh">3. 动态视觉语言前缀编码</span></strong></td>
+                <td><code>Qwen3-VL-4B (Eager PyTorch)</code></td>
+                <td>~48.1 ms</td>
+                <td><span class="lang-en">Multi-camera batched preprocessing + 36-layer KV construction.</span><span class="lang-zh">三路相机并行预处理与多模态前缀特征提取。</span></td>
+              </tr>
+              <tr>
+                <td><strong><span class="lang-en">4. Action Denoising Loop</span><span class="lang-zh">4. 动作去噪循环 (10 步)</span></strong></td>
+                <td><strong><code>CUDA Graph Action Denoising</code></strong></td>
+                <td><strong>~125.3 ms</strong></td>
+                <td><span class="lang-en">Fixed shape [1, 50, 55]; eager mode took 607.8 ms (<strong>3.8x faster</strong>).</span><span class="lang-zh">固定 Shape 录制执行；Eager 模式需 607.8 ms（<strong>提速近 3.8 倍</strong>）。</span></td>
+              </tr>
+              <tr>
+                <td><strong><span class="lang-en">5. Action Chunk Egress</span><span class="lang-zh">5. 动作块数据下行下发</span></strong></td>
+                <td><code>/v1/vla/session (WebSocket)</code></td>
+                <td>~3.1 ms</td>
+                <td><span class="lang-en">Serialized <code>RobotActionChunk</code> return frame.</span><span class="lang-zh">下发经过反归一化与本体映射后的绝对关节动作块。</span></td>
+              </tr>
+              <tr style="background-color: var(--accent-subtle); font-weight: 600;">
+                <td><strong><span class="lang-en">Total Round-Trip Time</span><span class="lang-zh">端到端总时延 (RTT)</span></strong></td>
+                <td><span class="lang-en">Sensor-to-Action Pipeline</span><span class="lang-zh">从感知到动作就绪全流程</span></td>
+                <td><strong>~193.1 ms</strong></td>
+                <td><span class="lang-en">Entire sense-infer-act turnaround time.</span><span class="lang-zh">完整闭环响应时间。</span></td>
+              </tr>
+              <tr>
+                <td><strong><span class="lang-en">Physical Execution Budget</span><span class="lang-zh">动作块物理执行窗口</span></strong></td>
+                <td><code>execute_horizon = 8</code> @ 20 Hz</td>
+                <td><strong>400.0 ms</strong></td>
+                <td><span class="lang-en">8 action steps $\times$ 50 ms step interval.</span><span class="lang-zh">8 个执行步 $\times$ 每步 50 ms。</span></td>
+              </tr>
+              <tr style="color: var(--accent-color); font-weight: 700;">
+                <td><strong><span class="lang-en">Pipeline Overlap Slack</span><span class="lang-zh">流水线掩盖裕度 (Slack)</span></strong></td>
+                <td><code>execute_ready_async()</code></td>
+                <td><strong>+206.9 ms</strong></td>
+                <td><span class="lang-en">Inference finishes 200+ ms before execution completes $\rightarrow$ <strong>Zero Bubbles!</strong></span><span class="lang-zh">推理在动作执行完毕前 200 ms 即已就绪 $\rightarrow$ <strong>完美流水线掩盖！</strong></span></td>
               </tr>
             </tbody>
           </table>
         </div>
 
         <div class="callout">
-          <div class="callout-title">💡 核心架构启示</div>
-          在具身模型中，“推理速度”并不等同于“服务性能”。真正重要的是<strong>时钟域同步、最新观测抢占（Supersede）以及对齐的语义动作空间</strong>。当前架构成功将控制论的状态机与现代高性能深度学习 Serving 融为一体。
+          <div class="callout-title"><span class="lang-en">Asynchronous Execution Overlap</span><span class="lang-zh">异步执行重叠机制</span></div>
+          <p class="lang-en">
+            Through <code>SimulatorChunkRuntime.execute_ready_async()</code>, the synchronous physics stepping of MuJoCo is offloaded to a worker thread pool (via <code>asyncio.to_thread</code>).
+            While the simulated ALOHA robot executes chunk $N$ over its 400 ms window, the async client concurrently transmits observation $N+1$ and triggers the next inference.
+            Because inference completes in ~193 ms, chunk $N+1$ arrives at the queue more than 200 ms before chunk $N$ exhausts its execution horizon,
+            guaranteeing continuous, uninterrupted trajectory execution.
+          </p>
+          <p class="lang-zh">
+            借助 <code>SimulatorChunkRuntime.execute_ready_async()</code>，MuJoCo 同步的物理步进计算被移出异步事件循环（通过 <code>asyncio.to_thread</code> 托管在专属工作线程中）。
+            在仿真机械臂于 400 ms 窗口内执行第 $N$ 个动作块期间，异步客户端同时发起第 $N+1$ 帧的观测传输并触发推理。
+            由于模型推理总延迟仅需 ~193 ms，第 $N+1$ 个动作块在第 $N$ 块执行完毕前 200 多毫秒就已就绪，从而达成了完全连续、无卡顿的轨迹闭环控制。
+          </p>
         </div>
       </section>
 
-      <!-- SECTION 4 -->
-      <section id="section-new-model">
-        <h2>4. 新模型接入实战：标准化 6 步作业流程（SOP）</h2>
-        <p>
-          在当前经过重构的架构下，无论是接入新的具身策略（如 OpenVLA、Octo、RoboCat）、视频生成模型，还是实时世界模型，开发者均应遵循以下 6 步标准作业程序：
-        </p>
+      <!-- SECTION 5: SOP -->
+      <section id="section-sop">
+        <h2 class="lang-en">5. New Model Integration Workflow (Standard SOP)</h2>
+        <h2 class="lang-zh">5. 新模型标准化接入作业流程（SOP）</h2>
 
-        <div class="diagram-box">
-Step 1: 模型算子实现 ➔ Step 2: 流水线编排 ➔ Step 3: 语义契约适配
-  (telefuser/models)     (telefuser/pipelines)  (telefuser/vla 或流协议)
-          ⬇                       ⬇                      ⬇
-Step 4: 服务池集成 ➔ Step 5: 阶梯式对齐测试 ➔ Step 6: Cookbook 与示例
-  (telefuser/service)    (tools/validation)     (examples/新模型)
+        <div class="lang-en">
+          <p>
+            Under the current architecture, integrating any new multimodal action or world model follows a standardized 6-step SOP:
+          </p>
+          <ol>
+            <li>
+              <strong>Model Layer Implementation (<code>telefuser/models/&lt;model_name&gt;/</code>)</strong>
+              <p>Construct network components (vision backbone, state projector, action diffusion DiT). Provide Safetensors shard loaders with key remapping, avoiding runtime dependencies on upstream training frameworks.</p>
+            </li>
+            <li>
+              <strong>Pipeline Composition & CUDA Graph (<code>telefuser/pipelines/&lt;model_name&gt;/</code>)</strong>
+              <p>Compose stages: observation encoding, latent noise sampling, and action denoising. Encapsulate the fixed-horizon denoising loop in a CUDA Graph capture wrapper.</p>
+            </li>
+            <li>
+              <strong>Semantic Protocol Implementation (<code>telefuser/vla/</code>)</strong>
+              <p>Subclass <code>VLAPolicy</code>, declare the model's native <code>ActionSpaceSpec</code>, and implement <code>predict() -> ModelActionChunk</code>. Construct target <code>EmbodimentAdapter</code> instances for specific robot hardware mappings.</p>
+            </li>
+            <li>
+              <strong>Service Pool Integration (<code>telefuser/service/</code>)</strong>
+              <p>Provide a <code>get_vla_provider()</code> factory in the pipeline module. Register the policy and embodiments into <code>VLARegistry</code>, enabling <code>PipelinePool.open_session()</code> support.</p>
+            </li>
+            <li>
+              <strong>Tiered Validation (<code>tools/validation/</code>)</strong>
+              <p>Execute the four-tier verification matrix (Unit Tests -> Upstream Tensor Parity -> Runtime Benchmarking -> Fault Injection).</p>
+            </li>
+            <li>
+              <strong>Cookbook Examples & Documentation (<code>examples/&lt;model_name&gt;/</code>)</strong>
+              <p>Provide a standalone CLI script (<code>lingbot_vla_v2_inference.py</code>), WebSocket server launcher (<code>lingbot_vla_v2_vla_server.py</code>), and standardized README.</p>
+            </li>
+          </ol>
         </div>
 
-        <h3>第一步：模型底层构建与权重加载 (<code>telefuser/models/&lt;model_name&gt;/</code>)</h3>
-        <ul>
-          <li><strong>模型定义</strong>：实现核心神经网络模块（DiT / Transformer / VAE / 策略网络）。</li>
-          <li><strong>统一权重解析</strong>：实现安全高效的 Safetensors 加载器（支持分片索引映射与键名重映射），避免上游 PyTorch Lightning 或特定框架的代码绑定。</li>
-          <li><strong>注意力加速选择</strong>：显式适配 TeleFuser 统一的 Attention 接口（标准 PyTorch SDPA、SageAttention 或适用于 H100 的 Sol-Attn）。</li>
-        </ul>
+        <div class="lang-zh">
+          <p>
+            在现行架构下，接入任何新的具身策略或多模态动作模型均遵循标准化的 6 步作业流程：
+          </p>
+          <ol>
+            <li>
+              <strong>模型层构建与权重加载 (<code>telefuser/models/&lt;model_name&gt;/</code>)</strong>
+              <p>实现神经网络模块（视觉骨干、状态投射层、动作去噪 DiT）。实现 Safetensors 分片加载与键名重映射逻辑，彻底剥离对上游训练框架的依赖。</p>
+            </li>
+            <li>
+              <strong>流水线编排与 CUDA Graph 捕获 (<code>telefuser/pipelines/&lt;model_name&gt;/</code>)</strong>
+              <p>阶段化编排前向推理：观测编码、噪声采样与动作去噪。为 Shape 固定的动作去噪循环封装 CUDA Graph Capture 逻辑。</p>
+            </li>
+            <li>
+              <strong>领域语义协议适配 (<code>telefuser/vla/</code>)</strong>
+              <p>继承 <code>VLAPolicy</code>，显式声明模型的 <code>ActionSpaceSpec</code>，并实现 <code>predict() -> ModelActionChunk</code>。为目标物理本体实现专用 <code>EmbodimentAdapter</code> 映射。</p>
+            </li>
+            <li>
+              <strong>服务池与会话支持 (<code>telefuser/service/</code>)</strong>
+              <p>在 Pipeline 模块中提供 <code>get_vla_provider()</code> 工厂方法，将策略与本体注册至 <code>VLARegistry</code>，支持 <code>PipelinePool.open_session()</code> 租约绑定。</p>
+            </li>
+            <li>
+              <strong>分层回归验证 (<code>tools/validation/</code>)</strong>
+              <p>执行四级验证矩阵（单元测试 $\rightarrow$ 逐层数值对齐 $\rightarrow$ 运行时 Benchmark $\rightarrow$ 故障容灾测试）。</p>
+            </li>
+            <li>
+              <strong>标准化示例与文档 (<code>examples/&lt;model_name&gt;/</code>)</strong>
+              <p>提供独立 Python 直推脚本、WebSocket 服务启动入口以及标准 Cookbook 规范 README。</p>
+            </li>
+          </ol>
+        </div>
+      </section>
 
-        <h3>第二步：流水线编排与加速策略 (<code>telefuser/pipelines/&lt;model_name&gt;/</code>)</h3>
-        <ul>
-          <li><strong>阶段式编排（Stage-based）</strong>：将推理切分为清晰的生命周期（如条件编码、潜在表示采样/去噪、解码）。</li>
-          <li><strong>CUDA Graph 优化</strong>：对于固定步数与维度的去噪循环，提供可选择的 CUDA Graph Capture 封装，降低每步 Launch 时延。</li>
-          <li><strong>显存优化选项</strong>：实现 CPU 异步卸载（Offload）或在线量化适配（TorchAO / bitsandbytes）。</li>
-        </ul>
+      <!-- SECTION 6: VALIDATION -->
+      <section id="section-validation">
+        <h2 class="lang-en">6. Quality Control, Parity Verification, and Robustness</h2>
+        <h2 class="lang-zh">6. 质量保证、数值对齐与容灾评测</h2>
 
-        <h3>第三步：领域语义契约适配（如为具身 VLA 模型）</h3>
-        <pre><code class="language-python">from telefuser.vla.contracts import ActionSpaceSpec, ObservationSpaceSpec, ModelActionChunk
-from telefuser.vla.policy import VLAPolicy
+        <div class="lang-en">
+          <p>
+            Because robotic policies directly actuate physical motors, optimizing inference must never introduce numerical drift or race conditions.
+            The current architecture enforces an automated four-tier regression gate:
+          </p>
+        </div>
+        <div class="lang-zh">
+          <p>
+            由于具身策略直接驱动物理执行机构，推理优化绝不可带来数值漂移或竞态条件。
+            现行架构通过自动化的四级门禁体系保证发布质量：
+          </p>
+        </div>
 
-class NewModelVLAPolicy(VLAPolicy):
-    def __init__(self, pipeline):
-        self.pipeline = pipeline
-
-    @property
-    def action_space(self) -> ActionSpaceSpec:
-        # 必须显式声明维度名称、单位、坐标系及归一化配置
-        return ActionSpaceSpec(
-            representation="joint_positions",
-            dimension_names=("joint_1", "joint_2", ..., "gripper"),
-            units=("rad", "rad", ..., "m"),
-            coordinate_frame="base_link",
-            control_hz=20.0,
-        )
-
-    def predict(self, observation, task, ...) -> ModelActionChunk:
-        # 执行推理并封装为标准的 ModelActionChunk
-        ...
-</code></pre>
-        <p>
-          若是不同型号的机器人本体，则只需实现对应的 <code>EmbodimentAdapter</code> 进行动作逆归一化或坐标变换，<strong>绝对无需修改模型主体</strong>。
-        </p>
-
-        <h3>第四步：服务池集成与会话支持 (<code>telefuser/service/</code>)</h3>
-        <ul>
-          <li><strong>协议注册</strong>：在 <code>telefuser.service.core.pipeline_contract</code> 中注册请求/响应的数据类型规范。</li>
-          <li><strong>支持 Session Lease</strong>：如果是持续控制模型，为 Pipeline 提供 <code>get_vla_provider()</code> 工厂方法，使其能被 <code>PipelinePool.open_session()</code> 识别并提供专属 worker 绑定。</li>
-        </ul>
-
-        <h3>第五步：阶梯式四级对齐与发布验证 (<code>tools/validation/</code> & <code>tests/unit/</code>)</h3>
         <div class="table-wrapper">
           <table>
             <thead>
               <tr>
-                <th>验证梯队</th>
-                <th>验证目标</th>
-                <th>通过准则 (Acceptance Criteria)</th>
+                <th><span class="lang-en">Tier</span><span class="lang-zh">验证层级</span></th>
+                <th><span class="lang-en">Verification Scope</span><span class="lang-zh">验证范围</span></th>
+                <th><span class="lang-en">Pass Criteria</span><span class="lang-zh">通过准则 (Acceptance Criteria)</span></th>
               </tr>
             </thead>
             <tbody>
               <tr>
-                <td><strong>L1: 单元测试</strong></td>
-                <td>基础组件、参数加载器、协议序列化无语法与类型错误。</td>
-                <td>CPU 快速单元测试全绿通过。</td>
+                <td><strong>L1: Unit</strong></td>
+                <td><span class="lang-en">Contracts, Base64 serialization, state machines, and configuration schemas.</span><span class="lang-zh">语义契约定义、Base64 编解码、状态机转移与配置解析。</span></td>
+                <td><span class="lang-en">100% pass on fast CPU pytest test suite.</span><span class="lang-zh">CPU 单测全绿通过，无语法与类型警告。</span></td>
               </tr>
               <tr>
-                <td><strong>L2: 官方对齐 (Parity)</strong></td>
-                <td>与官方原始实现（如 HuggingFace / 官方源码）进行逐层 Tensor 对齐。</td>
-                <td>在 BF16 精度下，最终输出绝对误差 <code>max_abs &lt; 1e-4</code>（确定性模式下追求 0.0）。</td>
+                <td><strong>L2: Parity</strong></td>
+                <td><span class="lang-en">Layer-by-layer tensor activations compared against upstream checkpoints.</span><span class="lang-zh">与上游官方参考实现进行 38 层中间激活张量逐层对齐。</span></td>
+                <td><span class="lang-en">Strict BF16 parity: <code>max_abs = 0.0</code> on deterministic baselines; <code>max_abs &lt; 1e-4</code> under optimization.</span><span class="lang-zh">确定性基线达成 <code>max_abs = 0.0</code> 绝对匹配；加速路径严格控制在 <code>&lt; 1e-4</code>。</span></td>
               </tr>
               <tr>
-                <td><strong>L3: 运行时 Benchmark</strong></td>
-                <td>统计端到端耗时、显存峰值（VRAM）、首帧延迟（TTFT）。</td>
-                <td>相比官方原版实现具备性能与显存优势。</td>
+                <td><strong>L3: Benchmark</strong></td>
+                <td><span class="lang-en">Action chunk latency, VRAM allocation, and CUDA Graph launch speedup.</span><span class="lang-zh">动作块推理耗时、显存占用峰值及 CUDA Graph 加速比。</span></td>
+                <td><span class="lang-en">Substantial latency reduction over eager baselines with zero VRAM leaks.</span><span class="lang-zh">对比 Eager 原版具备明显端到端延迟降低，且显存无持续累积。</span></td>
               </tr>
               <tr>
-                <td><strong>L4: 故障注入与压力测试</strong></td>
-                <td>模拟网络超时、连接意外中断、乱序观测注入。</td>
-                <td>服务器稳定抛出标准错误码，Worker 自动重置并回收资源，无显存泄露。</td>
+                <td><strong>L4: Fault Injection</strong></td>
+                <td><span class="lang-en">Client network dropouts, out-of-order frames, and stale observations.</span><span class="lang-zh">模拟网络闪断、丢包、观察帧乱序到达与超期请求。</span></td>
+                <td><span class="lang-en">Worker replicas recover cleanly; stale tasks superseded; deterministic error codes returned.</span><span class="lang-zh">服务稳定抛出标准异常码，过期任务平滑抢占，Worker 自动归池无僵死。</span></td>
               </tr>
             </tbody>
           </table>
         </div>
-
-        <h3>第六步：标准化 Cookbook 与工程范例 (<code>examples/&lt;model_name&gt;/</code>)</h3>
-        <p>
-          在 <code>examples/</code> 目录下建立独立的模型目录，包含：
-        </p>
-        <ol>
-          <li><code>&lt;model&gt;_inference.py</code>：最精简的单文件 Python 直推演示。</li>
-          <li><code>&lt;model&gt;_service.py</code>：启动高性能 Serving 或 WebSocket 会话服务的标准入口。</li>
-          <li><code>README.md</code>：遵循 TeleFuser Cookbook 统一规范，详述环境安装、模型权重下载指引与可复现基准。</li>
-        </ol>
       </section>
 
-      <!-- SECTION 5 -->
-      <section id="section-conclusion">
-        <h2>5. 总结与未来演进展望</h2>
-        <p>
-          回顾 <code>vla_test</code> 分支的建立与完善过程，这不仅是一次针对单一模型（LingBot-VLA v2）的功能集成，更是 TeleFuser 从传统的<strong>“多模态内容生成引擎”</strong>向<strong>“下一代通用具身与物理世界智能基础设施”</strong>迈进的关键里程碑。
-        </p>
-        <p>
-          在这一过程中，我们固化了以下几项不可动摇的工程信条：
-        </p>
+      <!-- SECTION 7: READING -->
+      <section id="section-reading">
+        <h2 class="lang-en">7. Summary and References</h2>
+        <h2 class="lang-zh">7. 总结与延伸参考</h2>
+
+        <div class="lang-en">
+          <p>
+            The transition from monolithic diffusion scripts to a decoupled, semantic VLA serving infrastructure represents
+            a key milestone for TeleFuser. By enforcing typed contracts, isolating physical simulator dependencies, and unifying
+            stateful session leases within <code>PipelinePool</code>, the framework establishes a solid architectural foundation
+            for real-time embodied foundation models.
+          </p>
+        </div>
+        <div class="lang-zh">
+          <p>
+            从单一的扩散生成脚本演进为语义化、高解耦的 VLA 具身服务架构，是 TeleFuser 框架迈向物理世界智能的关键一步。
+            通过强类型契约、零仿真环境依赖隔离与 <code>PipelinePool</code> 副本亲和会话租约的融合，
+            系统为下一代端到端机器人策略与闭环物理智能构筑了高吞吐、高可靠的工程底座。
+          </p>
+        </div>
+
         <ul>
-          <li><strong>坚持高标准数学对齐</strong>：所有优化前必须有严格的 Parity 黄金基线护航，优化决不以牺牲生成精度为代价。</li>
-          <li><strong>推崇语义明确性</strong>：绝不在系统内部传递语义模糊的高维张量，动作与传感器必须自描述。</li>
-          <li><strong>坚决解耦仿真与推理</strong>：让推理专注算力极致释放，让仿真专注物理动力学模拟，通过简洁明了的 WebSocket/WebRTC 协议连接彼此。</li>
+          <li><a href="https://github.com/Tele-AI/TeleFuser" target="_blank">TeleFuser Upstream Repository (main)</a></li>
+          <li><a href="https://github.com/Tele-AI/TeleFuser/tree/vla_test" target="_blank">TeleFuser VLA Development Branch (vla_test)</a></li>
+          <li><a href="https://github.com/Robbyant/lingbot-vla-v2" target="_blank">LingBot-VLA v2 Official Repository</a></li>
+          <li><a href="https://happydog060713.github.io" target="_blank">Personal Engineering Site (happydog060713.github.io)</a></li>
         </ul>
-        <p>
-          随着该分支功能的逐步沉淀与回流主干，TeleFuser 将以更开放、更敏捷的姿态迎接更多端到端机器人大模型、长时程世界模型与复杂具身场景的挑战！
-        </p>
       </section>
     </article>
 
     <footer>
-      <p>© 2026 HappyDog0713 · 基于 TeleFuser 架构工程实践构建</p>
-      <p style="margin-top: 6px;">托管于 GitHub Pages (happydog060713.github.io)</p>
+      <p>© 2026 HappyDog0713 · VLA Engineering Architecture Notes</p>
+      <p style="margin-top: 4px;">Hosted on GitHub Pages (<a href="https://happydog060713.github.io">happydog060713.github.io</a>)</p>
     </footer>
   </div>
 
   <script>
+    function setLanguage(lang) {
+      document.body.setAttribute('data-lang', lang);
+      document.getElementById('btnEn').classList.toggle('active', lang === 'en');
+      document.getElementById('btnZh').classList.toggle('active', lang === 'zh');
+      localStorage.setItem('preferred_lang', lang);
+    }
+
     function toggleTheme() {
       const currentTheme = document.documentElement.getAttribute('data-theme');
       const targetTheme = currentTheme === 'dark' ? 'light' : 'dark';
@@ -663,14 +943,17 @@ class NewModelVLAPolicy(VLAPolicy):
       localStorage.setItem('theme', targetTheme);
     }
 
-    // 记住用户选择的配色方案
-    (function initTheme() {
+    // Initialize preferences
+    (function init() {
       const savedTheme = localStorage.getItem('theme');
       if (savedTheme) {
         document.documentElement.setAttribute('data-theme', savedTheme);
       } else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
         document.documentElement.setAttribute('data-theme', 'dark');
       }
+
+      const savedLang = localStorage.getItem('preferred_lang') || 'en';
+      setLanguage(savedLang);
     })();
   </script>
 </body>
