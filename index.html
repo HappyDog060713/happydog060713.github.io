@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TeleFuser 架构演进与具身智能实践：从 vla_test 分支看新模型接入范式</title>
+  <style>
+    :root {
+      --bg-primary: #ffffff;
+      --bg-secondary: #f8fafc;
+      --bg-tertiary: #f1f5f9;
+      --text-primary: #0f172a;
+      --text-secondary: #475569;
+      --text-muted: #64748b;
+      --border-color: #e2e8f0;
+      --accent-color: #2563eb;
+      --accent-hover: #1d4ed8;
+      --accent-subtle: #eff6ff;
+      --code-bg: #1e293b;
+      --code-text: #e2e8f0;
+      --inline-code-bg: #f1f5f9;
+      --inline-code-text: #0f172a;
+      --card-border: #cbd5e1;
+      --tag-bg: #e0e7ff;
+      --tag-text: #3730a3;
+      --success-bg: #ecfdf5;
+      --success-text: #065f46;
+      --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+      --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+    }
+
+    [data-theme="dark"] {
+      --bg-primary: #090d16;
+      --bg-secondary: #111827;
+      --bg-tertiary: #1f2937;
+      --text-primary: #f9fafb;
+      --text-secondary: #9ca3af;
+      --text-muted: #6b7280;
+      --border-color: #374151;
+      --accent-color: #3b82f6;
+      --accent-hover: #60a5fa;
+      --accent-subtle: #1e293b;
+      --code-bg: #030712;
+      --code-text: #f3f4f6;
+      --inline-code-bg: #1f2937;
+      --inline-code-text: #93c5fd;
+      --card-border: #374151;
+      --tag-bg: #312e81;
+      --tag-text: #c7d2fe;
+      --success-bg: #064e3b;
+      --success-text: #a7f3d0;
+      --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.5);
+      --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.5);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background-color: var(--bg-primary);
+      color: var(--text-primary);
+      line-height: 1.75;
+      font-size: 16px;
+      transition: background-color 0.2s ease, color 0.2s ease;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 40px 24px 80px;
+    }
+
+    header {
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 32px;
+      margin-bottom: 40px;
+    }
+
+    .meta-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      font-size: 0.9rem;
+      color: var(--text-muted);
+    }
+
+    .theme-toggle-btn {
+      background: var(--bg-tertiary);
+      color: var(--text-primary);
+      border: 1px solid var(--border-color);
+      padding: 6px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.85rem;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.15s ease;
+    }
+
+    .theme-toggle-btn:hover {
+      background: var(--border-color);
+    }
+
+    h1.post-title {
+      font-size: 2.2rem;
+      font-weight: 800;
+      line-height: 1.3;
+      color: var(--text-primary);
+      margin-bottom: 16px;
+      letter-spacing: -0.02em;
+    }
+
+    .repo-badges {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 16px;
+    }
+
+    .repo-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      background-color: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      font-size: 0.85rem;
+      color: var(--accent-color);
+      text-decoration: none;
+      font-family: ui-monospace, monospace;
+      transition: all 0.15s ease;
+    }
+
+    .repo-link:hover {
+      border-color: var(--accent-color);
+      background-color: var(--accent-subtle);
+    }
+
+    .toc {
+      background-color: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 20px 24px;
+      margin: 32px 0;
+    }
+
+    .toc h4 {
+      margin-bottom: 12px;
+      font-size: 1rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+    }
+
+    .toc ul {
+      list-style: none;
+    }
+
+    .toc li {
+      margin: 6px 0;
+    }
+
+    .toc a {
+      color: var(--text-secondary);
+      text-decoration: none;
+      font-size: 0.95rem;
+      transition: color 0.15s ease;
+    }
+
+    .toc a:hover {
+      color: var(--accent-color);
+      text-decoration: underline;
+    }
+
+    article h2 {
+      font-size: 1.6rem;
+      font-weight: 700;
+      margin: 48px 0 20px;
+      padding-bottom: 8px;
+      border-bottom: 2px solid var(--border-color);
+      letter-spacing: -0.01em;
+    }
+
+    article h3 {
+      font-size: 1.25rem;
+      font-weight: 600;
+      margin: 32px 0 14px;
+      color: var(--text-primary);
+    }
+
+    article h4 {
+      font-size: 1.05rem;
+      font-weight: 600;
+      margin: 20px 0 10px;
+    }
+
+    article p {
+      margin-bottom: 16px;
+      color: var(--text-secondary);
+    }
+
+    article ul, article ol {
+      margin-bottom: 18px;
+      padding-left: 24px;
+      color: var(--text-secondary);
+    }
+
+    article li {
+      margin-bottom: 6px;
+    }
+
+    strong {
+      color: var(--text-primary);
+    }
+
+    a {
+      color: var(--accent-color);
+      text-decoration: none;
+    }
+
+    a:hover {
+      text-decoration: underline;
+    }
+
+    code {
+      font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+      font-size: 0.88em;
+      background-color: var(--inline-code-bg);
+      color: var(--inline-code-text);
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+
+    pre {
+      background-color: var(--code-bg);
+      color: var(--code-text);
+      padding: 16px 20px;
+      border-radius: 8px;
+      overflow-x: auto;
+      margin: 20px 0;
+      font-size: 0.88rem;
+      line-height: 1.5;
+      border: 1px solid var(--border-color);
+    }
+
+    pre code {
+      background-color: transparent;
+      color: inherit;
+      padding: 0;
+    }
+
+    .table-wrapper {
+      overflow-x: auto;
+      margin: 24px 0;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.9rem;
+      text-align: left;
+    }
+
+    th, td {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    th {
+      background-color: var(--bg-secondary);
+      color: var(--text-primary);
+      font-weight: 600;
+    }
+
+    tr:last-child td {
+      border-bottom: none;
+    }
+
+    tr:nth-child(even) td {
+      background-color: var(--bg-secondary);
+    }
+
+    .callout {
+      border-left: 4px solid var(--accent-color);
+      background-color: var(--accent-subtle);
+      padding: 16px 20px;
+      border-radius: 0 8px 8px 0;
+      margin: 20px 0;
+      font-size: 0.95rem;
+    }
+
+    .callout-title {
+      font-weight: 600;
+      color: var(--accent-color);
+      margin-bottom: 4px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .commit-badge {
+      display: inline-block;
+      font-family: ui-monospace, monospace;
+      font-size: 0.8rem;
+      padding: 2px 6px;
+      border-radius: 4px;
+      background-color: var(--bg-tertiary);
+      border: 1px solid var(--border-color);
+      color: var(--accent-color);
+    }
+
+    .diagram-box {
+      background-color: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 20px;
+      margin: 24px 0;
+      font-family: ui-monospace, monospace;
+      font-size: 0.85rem;
+      line-height: 1.5;
+      overflow-x: auto;
+    }
+
+    footer {
+      border-top: 1px solid var(--border-color);
+      padding-top: 24px;
+      margin-top: 60px;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="meta-bar">
+        <span>作者：<strong>HappyDog0713</strong> · 发布时间：2026年9月 · 架构工程笔记</span>
+        <button class="theme-toggle-btn" id="themeToggle" onclick="toggleTheme()">
+          🌓 切换深浅模式
+        </button>
+      </div>
+      <h1 class="post-title">TeleFuser 架构演进与具身智能实践：从 vla_test 分支看新模型接入范式</h1>
+      <p style="color: var(--text-secondary); font-size: 1.05rem;">
+        本文深度复盘 TeleFuser 仓库自创建 <code>vla_test</code> 分支以来的 40+ 次核心提交历程。从初始的 LingBot-VLA v2 模型对齐，到单卡服务与动静结合的 CUDA Graph 降噪加速，再到彻底重构出的“语义化动作空间”与“副本亲和会话管理（Replica-Backed Session Serving）”，全方位剖析具身智能与大模型融合架构的演进脉络，并为后续新模型（文生视频、世界模型、具身策略）的标准化接入提供实战指南。
+      </p>
+      <div class="repo-badges">
+        <a href="https://github.com/Tele-AI/TeleFuser" class="repo-link" target="_blank" rel="noopener">
+          📦 Main 仓库: Tele-AI/TeleFuser
+        </a>
+        <a href="https://github.com/Tele-AI/TeleFuser/tree/vla_test" class="repo-link" target="_blank" rel="noopener">
+          🌿 特性分支: vla_test
+        </a>
+        <a href="https://happydog060713.github.io" class="repo-link" target="_blank" rel="noopener">
+          🏠 博客主页: happydog060713.github.io
+        </a>
+      </div>
+    </header>
+
+    <div class="toc">
+      <h4>目录索引</h4>
+      <ul>
+        <li><a href="#section-intro">1. 背景引言：为什么需要 vla_test 分支？</a></li>
+        <li><a href="#section-commits">2. vla_test 演进全景：关键提交与四阶段技术突破</a></li>
+        <li><a href="#section-arch-diff">3. 架构对比：早期 TeleFuser vs 当前现行架构</a></li>
+        <li><a href="#section-new-model">4. 新模型接入实战：标准化 6 步作业流程（SOP）</a></li>
+        <li><a href="#section-conclusion">5. 总结与未来演进展望</a></li>
+      </ul>
+    </div>
+
+    <article>
+      <!-- SECTION 1 -->
+      <section id="section-intro">
+        <h2>1. 背景引言：为什么需要 vla_test 分支？</h2>
+        <p>
+          <a href="https://github.com/Tele-AI/TeleFuser" target="_blank">TeleFuser</a> 是中国电信人工智能研究院（Tele-AI）开源的高吞吐多模态扩散生成与实时流式计算推理框架。在早期阶段，TeleFuser 的主要重心集中于标准视频生成（如 Wan2.1、LTX-Video）以及流式世界模型（LingBot-World、Abot-World）。这些模型典型的推理范式是：用户发起一次性的文本/图像输入，经过耗时较长、多步 Denoise 的生成过程，返回完整视频或音频文件。
+        </p>
+        <p>
+          然而，随着<strong>具身智能（Embodied AI）</strong>与视觉-语言-动作大模型（Vision-Language-Action, VLA，如 <code>LingBot-VLA v2</code>）的兴起，传统的“无状态、批处理”推理服务遇到了根本性挑战：
+        </p>
+        <ul>
+          <li><strong>交互模式演变</strong>：从单次 Request-Response 演变成多步、有状态、低延迟的<strong>持续闭环交互会话（Session）</strong>。</li>
+          <li><strong>动作时序性与抢占性</strong>：机械臂控制必须具备严格的时间衰减（Age Check）、TTL 机制，并在新观测到达时支持对过时动作序列的优雅抢占（Supersede）。</li>
+          <li><strong>仿真环境解耦</strong>：机械臂控制通常对接 RoboTwin、MuJoCo 或真实机器人本体，若服务端直接绑定具体的物理引擎（如 SAPIEN/Vulkan/ROS），会导致推理服务器环境极为臃肿且不可维护。</li>
+        </ul>
+        <p>
+          基于上述需求，开发者建立了 <a href="https://github.com/Tele-AI/TeleFuser/tree/vla_test" target="_blank"><code>vla_test</code> 分支</a>。历经近两个月的持续迭代，不仅圆满完成了 LingBot-VLA v2 的高性能推理与服务化，更推动了 TeleFuser 整体架构在<strong>会话管理、动作空间语义化与仿真解耦</strong>上的重构升级。
+        </p>
+      </section>
+
+      <!-- SECTION 2 -->
+      <section id="section-commits">
+        <h2>2. vla_test 演进全景：关键提交与四阶段技术突破</h2>
+        <p>
+          通过检查 <code>vla_test</code> 自初始化以来的全部提交记录，整个演进历程可清晰划分为四个阶段：
+        </p>
+
+        <div class="diagram-box">
+阶段一：基线构建与严格对齐 (7月下旬 - 8月上旬)
+  f964169 (Init) ➔ 87960ac (Base Support) ➔ 8d03aa0 (Strict Parity) ➔ 3c996d6 (Trim Training Code)
+                     ⬇
+阶段二：服务工程化与 CUDA Graph 突破 (8月中旬 - 8月下旬)
+  3b49c71 (Native Service) ➔ 878aa1b (CUDA Graph Denoise) ➔ ff2f0f7 (Batch Camera) ➔ f02ec54 (Release Suite)
+                     ⬇
+阶段三：RoboTwin 仿真适配探索与痛点反思 (8月下旬 - 9月上旬)
+  af644c4 (RoboTwin Adapter) ➔ 4e19bf3 (Remote Contract) ➔ 7801f53 (Action Chunks)
+                     ⬇
+阶段四：架构质变——通用语义化 VLA 会话与仿真解耦 (9月中旬)
+  4e44652 (Semantic Space) ➔ d6383a4 (Replica-Backed Pool) ➔ 9504db8 (Generic WS) ➔ 733aad3 (Retire Legacy)
+        </div>
+
+        <h3>阶段一：基线引入、显存瘦身与严格精度对齐（2026.07.28 ~ 2026.08.05）</h3>
+        <p>
+          此阶段的目标是将官方的 LingBot-VLA v2 6B 模型以最轻量的方式引入 TeleFuser，建立黄金标准。
+        </p>
+        <ul>
+          <li><span class="commit-badge">f964169</span> <code>feat: lingbot-vla-v2 init</code> 与 <span class="commit-badge">87960ac</span> <code>feat: add LingBot VLA v2 base inference support</code>：初始化模型代码骨架，引入 Qwen3-VL 视觉/语言编码器与动作去噪 DiT。</li>
+          <li><span class="commit-badge">8d03aa0</span> <code>test(vla): establish official upstream parity</code>：建立官方上游比对测试。在 BF16 精度下完成了 38 个关键层激活张量的逐层验证，达成严格的 <code>max_abs = 0.0</code> 绝对对齐。</li>
+          <li><span class="commit-badge">3c996d6</span> <code>refactor(vla): trim training-only runtime code</code> 与 <span class="commit-badge">2d40ee2</span> <code>refactor(vla): prune legacy LingBot model code</code>：大刀阔斧剥离上游训练专用的冗余代码与废弃权重，确立推理专用精简目录。</li>
+          <li><span class="commit-badge">3b49c71</span> / <span class="commit-badge">953ec3f</span> / <span class="commit-badge">442106c</span>：构建单卡原生结构化动作推理服务，并优化首版单卡调度时延。</li>
+        </ul>
+
+        <h3>阶段二：首期合并、CUDA Graph 动静结合加速与全自动化评测（2026.08.06 ~ 2026.08.27）</h3>
+        <p>
+          在完成 PR #28 合并后，工作重心转向工业级吞吐优化与发布级质量保障。
+        </p>
+        <ul>
+          <li><span class="commit-badge">878aa1b</span> <strong><code>feat(vla): add CUDA Graph action denoising</code></strong>：<strong>关键性能拐点</strong>。由于 VLA 输入包含动态长度的多模态视觉提示词，而动作去噪循环（Action Denoising Loop）是固定 Shape（如 <code>50 x 55</code>）。团队创造性地采用<strong>“动态视觉 Prefix 走 Eager 模式 + 固定动作去噪循环录制为 CUDA Graph”</strong>的动静结合机制，消除了高频小算子的 Kernel Launch 开销，大幅压低推理延迟。</li>
+          <li><span class="commit-badge">ff2f0f7</span> <code>perf(lingbot-vla-v2): batch camera preprocessing</code>：将头部（High）、左手腕（Left Wrist）、右手腕（Right Wrist）三路相机的预处理合并批处理，减少显存搬移。</li>
+          <li><span class="commit-badge">348b8ca</span> / <span class="commit-badge">3f9bfe8</span> / <span class="commit-badge">34b98f9</span>：优化 SDPA 注意力机制，解决 Rotary Embedding 和 BF16 视觉插值在不同后端下的细微漂移问题。</li>
+          <li><span class="commit-badge">1eafa09</span> / <span class="commit-badge">839a776</span>：引入 TorchAO 与 bitsandbytes 在线量化支持（INT8 / NF4 / FP8），使 6B 模型能够平稳运行于更低显存卡型上。</li>
+          <li><span class="commit-badge">f02ec54</span> / <span class="commit-badge">326b2d5</span>：固化全自动化发布验证套件（Release Validation Suite），涵盖严苛的对齐、基准与故障容灾测试。</li>
+        </ul>
+
+        <h3>阶段三：RoboTwin 仿真适配探索与反思（2026.08.31 ~ 2026.09.08）</h3>
+        <p>
+          为了验证策略在模拟机械臂上的真实控制效果，团队开展了仿真适配：
+        </p>
+        <ul>
+          <li><span class="commit-badge">af644c4</span> / <span class="commit-badge">4e19bf3</span> / <span class="commit-badge">7801f53</span>：构建了基于 RoboTwin MessagePack 协议的专用动作服务器，支持远端推理与动作分块（Action Chunks）流水线调度。</li>
+          <li><strong>痛点暴露与反思</strong>：在实践中发现，将 MessagePack RPC、RoboTwin 的专用坐标系硬编码进推理端，导致服务端产生了对下游仿真环境的紧耦合；一旦接入新机械臂（如 ALOHA、Franka）或新仿真器（MuJoCo、IsaacGym），就需要重写大量网络与协议胶水代码。</li>
+        </ul>
+
+        <h3>阶段四：架构质变——通用语义化 VLA 会话与仿真解耦（2026.09.10 ~ 2026.09.15）</h3>
+        <p>
+          这是 <code>vla_test</code> 分支最辉煌的架构演进，彻底重塑了 TeleFuser 的服务形态：
+        </p>
+        <ul>
+          <li><span class="commit-badge">4e44652</span> <strong><code>feat(vla): add semantic action session framework</code></strong>：构建了全新的 <code>telefuser.vla</code> 顶层抽象。提出 <strong>绝不以张量维度盲猜动作含义</strong> 的原则，定义了强类型的 <code>ActionSpaceSpec</code> 和 <code>ObservationSpaceSpec</code>，解耦了策略模型（<code>VLAPolicy</code>）与机器人本体（<code>EmbodimentAdapter</code>）。</li>
+          <li><span class="commit-badge">d6383a4</span> <strong><code>feat(vla): add replica-backed session serving</code></strong>：对底层的 <code>PipelinePool</code> 进行了突破性改造。在保留传统无状态 <code>acquire()</code> 任务调度的同时，扩展了具有<strong>显存/进程亲和性的有状态会话租约</strong>（<code>open_session</code> / <code>acquire_session</code> / <code>close_session</code>），保证控制流独占与状态隔离。</li>
+          <li><span class="commit-badge">9504db8</span> <strong><code>feat(vla): complete generic session integration</code></strong>：构建了通用的 <code>/v1/vla/session</code> WebSocket 双向协议，采用标准 JSON 封装 Base64 编码的紧凑张量，支持 <code>OPEN</code>、<code>PREDICT</code>、<code>RESET</code>、<code>CLOSE</code> 全生命周期控制与超期丢弃（Superseded）。</li>
+          <li><span class="commit-badge">bce0702</span> / <span class="commit-badge">3d28619</span>：引入纯 Python、无厚重环境依赖的 MuJoCo 本地快速验证路径，并提供客户端 Chunk 状态机（<code>SimulatorChunkRuntime</code>）。</li>
+          <li><span class="commit-badge">733aad3</span> <strong><code>refactor(vla): retire legacy RoboTwin inference endpoint</code></strong>：果断废弃并移除了过往紧耦合的 RoboTwin 专用 MessagePack 服务端，正式宣布进入标准化、通用语义会话时代！</li>
+        </ul>
+      </section>
+
+      <!-- SECTION 3 -->
+      <section id="section-arch-diff">
+        <h2>3. 架构对比：早期 TeleFuser vs 当前现行架构</h2>
+        <p>
+          从 <code>main</code> 到 <code>vla_test</code> 的淬炼，TeleFuser 的项目形态发生了结构性跃升。下表总结了关键维度的演化对比：
+        </p>
+
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>架构维度</th>
+                <th>早期项目架构 (Pre-VLA Baseline)</th>
+                <th>当前现行架构 (Current VLA-Ready)</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>模型模态覆盖</strong></td>
+                <td>侧重单向离线生成的视频模型 (Wan2.1, LTX-Video, HunyuanVideo) 与文本图像生成。</td>
+                <td><strong>全模态融合矩阵</strong>：离线扩散视频 + 交互式流式世界模型 (LiveKit WebRTC) + 具身智能闭环控制 (VLA WebSocket)。</td>
+              </tr>
+              <tr>
+                <td><strong>服务池与会话调度</strong></td>
+                <td><strong>纯无状态调度</strong>：<code>PipelinePool</code> 仅支持 <code>acquire()</code> / <code>release()</code>。多个请求彼此孤立，无持久化上下文。</td>
+                <td><strong>双模会话池化</strong>：既支持无状态任务队列，又支持<strong>副本亲和会话租约（Session Lease）</strong>，通过 <code>session_id</code> 锁定工作进程，断连自动回收。</td>
+              </tr>
+              <tr>
+                <td><strong>动作与传感器契约</strong></td>
+                <td>弱契约或硬编码：直接透传无物理含义的张量（如 <code>[50, 55]</code>），上下游依赖隐式约定，容易因坐标系或关节顺序错位而炸机。</td>
+                <td><strong>强类型语义契约</strong>：引入 <code>ActionSpaceSpec</code> 与 <code>ObservationSpaceSpec</code>。在会话建立阶段自动校验坐标系、单位、控制频率与归一化方式。</td>
+              </tr>
+              <tr>
+                <td><strong>仿真器/外部依赖边界</strong></td>
+                <td>仿真依赖反向污染服务端：推理服务曾直接引用特定仿真库与私有 RPC 协议（如 MessagePack）。</td>
+                <td><strong>传输中立与零污染</strong>：服务端仅保留纯 PyTorch 核心；仿真器作为客户端通过 WebSocket 交互，配套轻量无依赖的适配层。</td>
+              </tr>
+              <tr>
+                <td><strong>执行与加速引擎</strong></td>
+                <td>基本依赖 PyTorch Eager 模式，小尺寸短序列推理由于 CUDA Kernel 启动开销而遭遇瓶颈。</td>
+                <td><strong>动静结合混合编译</strong>：动态多模态前缀（Eager）+ 固定去噪循环（CUDA Graph），深度结合 SDPA、Sol-Attn 及 FP8/NF4 量化。</td>
+              </tr>
+              <tr>
+                <td><strong>动作时序状态机</strong></td>
+                <td>无时序概念：下游拿到数据后直接执行，网络抖动或丢包时可能执行过期动作。</td>
+                <td><strong>客户端时序状态机</strong>：<code>SimulatorChunkRuntime</code> 严格跟踪 PENDING、READY、EXECUTING、SUPERSEDED，杜绝执行陈旧指令。</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="callout">
+          <div class="callout-title">💡 核心架构启示</div>
+          在具身模型中，“推理速度”并不等同于“服务性能”。真正重要的是<strong>时钟域同步、最新观测抢占（Supersede）以及对齐的语义动作空间</strong>。当前架构成功将控制论的状态机与现代高性能深度学习 Serving 融为一体。
+        </div>
+      </section>
+
+      <!-- SECTION 4 -->
+      <section id="section-new-model">
+        <h2>4. 新模型接入实战：标准化 6 步作业流程（SOP）</h2>
+        <p>
+          在当前经过重构的架构下，无论是接入新的具身策略（如 OpenVLA、Octo、RoboCat）、视频生成模型，还是实时世界模型，开发者均应遵循以下 6 步标准作业程序：
+        </p>
+
+        <div class="diagram-box">
+Step 1: 模型算子实现 ➔ Step 2: 流水线编排 ➔ Step 3: 语义契约适配
+  (telefuser/models)     (telefuser/pipelines)  (telefuser/vla 或流协议)
+          ⬇                       ⬇                      ⬇
+Step 4: 服务池集成 ➔ Step 5: 阶梯式对齐测试 ➔ Step 6: Cookbook 与示例
+  (telefuser/service)    (tools/validation)     (examples/新模型)
+        </div>
+
+        <h3>第一步：模型底层构建与权重加载 (<code>telefuser/models/&lt;model_name&gt;/</code>)</h3>
+        <ul>
+          <li><strong>模型定义</strong>：实现核心神经网络模块（DiT / Transformer / VAE / 策略网络）。</li>
+          <li><strong>统一权重解析</strong>：实现安全高效的 Safetensors 加载器（支持分片索引映射与键名重映射），避免上游 PyTorch Lightning 或特定框架的代码绑定。</li>
+          <li><strong>注意力加速选择</strong>：显式适配 TeleFuser 统一的 Attention 接口（标准 PyTorch SDPA、SageAttention 或适用于 H100 的 Sol-Attn）。</li>
+        </ul>
+
+        <h3>第二步：流水线编排与加速策略 (<code>telefuser/pipelines/&lt;model_name&gt;/</code>)</h3>
+        <ul>
+          <li><strong>阶段式编排（Stage-based）</strong>：将推理切分为清晰的生命周期（如条件编码、潜在表示采样/去噪、解码）。</li>
+          <li><strong>CUDA Graph 优化</strong>：对于固定步数与维度的去噪循环，提供可选择的 CUDA Graph Capture 封装，降低每步 Launch 时延。</li>
+          <li><strong>显存优化选项</strong>：实现 CPU 异步卸载（Offload）或在线量化适配（TorchAO / bitsandbytes）。</li>
+        </ul>
+
+        <h3>第三步：领域语义契约适配（如为具身 VLA 模型）</h3>
+        <pre><code class="language-python">from telefuser.vla.contracts import ActionSpaceSpec, ObservationSpaceSpec, ModelActionChunk
+from telefuser.vla.policy import VLAPolicy
+
+class NewModelVLAPolicy(VLAPolicy):
+    def __init__(self, pipeline):
+        self.pipeline = pipeline
+
+    @property
+    def action_space(self) -> ActionSpaceSpec:
+        # 必须显式声明维度名称、单位、坐标系及归一化配置
+        return ActionSpaceSpec(
+            representation="joint_positions",
+            dimension_names=("joint_1", "joint_2", ..., "gripper"),
+            units=("rad", "rad", ..., "m"),
+            coordinate_frame="base_link",
+            control_hz=20.0,
+        )
+
+    def predict(self, observation, task, ...) -> ModelActionChunk:
+        # 执行推理并封装为标准的 ModelActionChunk
+        ...
+</code></pre>
+        <p>
+          若是不同型号的机器人本体，则只需实现对应的 <code>EmbodimentAdapter</code> 进行动作逆归一化或坐标变换，<strong>绝对无需修改模型主体</strong>。
+        </p>
+
+        <h3>第四步：服务池集成与会话支持 (<code>telefuser/service/</code>)</h3>
+        <ul>
+          <li><strong>协议注册</strong>：在 <code>telefuser.service.core.pipeline_contract</code> 中注册请求/响应的数据类型规范。</li>
+          <li><strong>支持 Session Lease</strong>：如果是持续控制模型，为 Pipeline 提供 <code>get_vla_provider()</code> 工厂方法，使其能被 <code>PipelinePool.open_session()</code> 识别并提供专属 worker 绑定。</li>
+        </ul>
+
+        <h3>第五步：阶梯式四级对齐与发布验证 (<code>tools/validation/</code> & <code>tests/unit/</code>)</h3>
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>验证梯队</th>
+                <th>验证目标</th>
+                <th>通过准则 (Acceptance Criteria)</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>L1: 单元测试</strong></td>
+                <td>基础组件、参数加载器、协议序列化无语法与类型错误。</td>
+                <td>CPU 快速单元测试全绿通过。</td>
+              </tr>
+              <tr>
+                <td><strong>L2: 官方对齐 (Parity)</strong></td>
+                <td>与官方原始实现（如 HuggingFace / 官方源码）进行逐层 Tensor 对齐。</td>
+                <td>在 BF16 精度下，最终输出绝对误差 <code>max_abs &lt; 1e-4</code>（确定性模式下追求 0.0）。</td>
+              </tr>
+              <tr>
+                <td><strong>L3: 运行时 Benchmark</strong></td>
+                <td>统计端到端耗时、显存峰值（VRAM）、首帧延迟（TTFT）。</td>
+                <td>相比官方原版实现具备性能与显存优势。</td>
+              </tr>
+              <tr>
+                <td><strong>L4: 故障注入与压力测试</strong></td>
+                <td>模拟网络超时、连接意外中断、乱序观测注入。</td>
+                <td>服务器稳定抛出标准错误码，Worker 自动重置并回收资源，无显存泄露。</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3>第六步：标准化 Cookbook 与工程范例 (<code>examples/&lt;model_name&gt;/</code>)</h3>
+        <p>
+          在 <code>examples/</code> 目录下建立独立的模型目录，包含：
+        </p>
+        <ol>
+          <li><code>&lt;model&gt;_inference.py</code>：最精简的单文件 Python 直推演示。</li>
+          <li><code>&lt;model&gt;_service.py</code>：启动高性能 Serving 或 WebSocket 会话服务的标准入口。</li>
+          <li><code>README.md</code>：遵循 TeleFuser Cookbook 统一规范，详述环境安装、模型权重下载指引与可复现基准。</li>
+        </ol>
+      </section>
+
+      <!-- SECTION 5 -->
+      <section id="section-conclusion">
+        <h2>5. 总结与未来演进展望</h2>
+        <p>
+          回顾 <code>vla_test</code> 分支的建立与完善过程，这不仅是一次针对单一模型（LingBot-VLA v2）的功能集成，更是 TeleFuser 从传统的<strong>“多模态内容生成引擎”</strong>向<strong>“下一代通用具身与物理世界智能基础设施”</strong>迈进的关键里程碑。
+        </p>
+        <p>
+          在这一过程中，我们固化了以下几项不可动摇的工程信条：
+        </p>
+        <ul>
+          <li><strong>坚持高标准数学对齐</strong>：所有优化前必须有严格的 Parity 黄金基线护航，优化决不以牺牲生成精度为代价。</li>
+          <li><strong>推崇语义明确性</strong>：绝不在系统内部传递语义模糊的高维张量，动作与传感器必须自描述。</li>
+          <li><strong>坚决解耦仿真与推理</strong>：让推理专注算力极致释放，让仿真专注物理动力学模拟，通过简洁明了的 WebSocket/WebRTC 协议连接彼此。</li>
+        </ul>
+        <p>
+          随着该分支功能的逐步沉淀与回流主干，TeleFuser 将以更开放、更敏捷的姿态迎接更多端到端机器人大模型、长时程世界模型与复杂具身场景的挑战！
+        </p>
+      </section>
+    </article>
+
+    <footer>
+      <p>© 2026 HappyDog0713 · 基于 TeleFuser 架构工程实践构建</p>
+      <p style="margin-top: 6px;">托管于 GitHub Pages (happydog060713.github.io)</p>
+    </footer>
+  </div>
+
+  <script>
+    function toggleTheme() {
+      const currentTheme = document.documentElement.getAttribute('data-theme');
+      const targetTheme = currentTheme === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', targetTheme);
+      localStorage.setItem('theme', targetTheme);
+    }
+
+    // 记住用户选择的配色方案
+    (function initTheme() {
+      const savedTheme = localStorage.getItem('theme');
+      if (savedTheme) {
+        document.documentElement.setAttribute('data-theme', savedTheme);
+      } else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        document.documentElement.setAttribute('data-theme', 'dark');
+      }
+    })();
+  </script>
+</body>
+</html>
