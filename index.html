@@ -429,7 +429,7 @@
         <li><a href="#section-comparison"><span class="lang-en">3. Architecture Comparison: Pre-VLA vs. Current VLA Architecture</span><span class="lang-zh">3. 系统架构对比：前期架构 vs 现行 VLA 架构</span></a></li>
         <li><a href="#section-mujoco"><span class="lang-en">4. MuJoCo Simulation Verification & Pipeline Latency Analysis</span><span class="lang-zh">4. MuJoCo 仿真闭环验证与全链路延迟分析</span></a></li>
         <li><a href="#section-sop"><span class="lang-en">5. New Model Integration Workflow (Standard SOP)</span><span class="lang-zh">5. 新模型标准化接入作业流程（SOP）</span></a></li>
-        <li><a href="#section-reading"><span class="lang-en">6. Summary and References</span><span class="lang-zh">6. 总结与延伸参考</span></a></li>
+        <li><a href="#section-reading"><span class="lang-en">6. Summary and Further Reading</span><span class="lang-zh">6. 总结与延伸参考</span></a></li>
       </ul>
     </div>
 
@@ -557,32 +557,6 @@
       <section id="section-comparison">
         <h2 class="lang-en">3. Architecture Comparison: Pre-VLA vs. Current VLA Architecture</h2>
         <h2 class="lang-zh">3. 系统架构对比：前期架构 vs 现行 VLA 架构</h2>
-
-        <div class="ascii-block">
-Data Flow in Current Architecture:
-  Robot Observation (Images, Proprioception State, Task Text)
-         |
-         v
-  EmbodimentAdapter.encode_observation
-         |  [ObservationSpaceSpec Verification]
-         v
-  VLAPolicy.predict (Eager Visual Prefix + CUDA Graph Denoising)
-         |
-         v
-  ModelActionChunk (Canonical Normalized Actions)
-         |
-         v
-  EmbodimentAdapter.decode_actions
-         |  [ActionSpaceSpec Verification]
-         v
-  RobotActionChunk (Physical Joint Angles, Velocities, Gripper)
-         |
-         v
-  SimulatorChunkRuntime (Client-Side State Machine: Age Check, Superseding, Safety Clamp)
-         |
-         v
-  SimulatorAdapter.execute (MuJoCo / RoboTwin / Physical Robot)
-        </div>
 
         <div class="table-wrapper">
           <table>
@@ -840,7 +814,7 @@ Data Flow in Current Architecture:
 
       <!-- SECTION 6: READING -->
       <section id="section-reading">
-        <h2 class="lang-en">6. Summary and References</h2>
+        <h2 class="lang-en">6. Summary and Further Reading</h2>
         <h2 class="lang-zh">6. 总结与延伸参考</h2>
 
         <div class="lang-en">
@@ -863,6 +837,8 @@ Data Flow in Current Architecture:
           <li><a href="https://github.com/Tele-AI/TeleFuser" target="_blank">TeleFuser Upstream Repository (main)</a></li>
           <li><a href="https://github.com/Tele-AI/TeleFuser/tree/vla_test" target="_blank">TeleFuser VLA Development Branch (vla_test)</a></li>
           <li><a href="https://github.com/Robbyant/lingbot-vla-v2" target="_blank">LingBot-VLA v2 Official Repository</a></li>
+          <li><a href="https://github.com/ModelTC/LightX2V" target="_blank">LightX2V: High-Performance Video Generation Engine</a></li>
+          <li><a href="https://github.com/flashrt-project/FlashRT" target="_blank">FlashRT: Real-Time Multimodal Inference Runtime</a></li>
           <li><a href="https://happydog060713.github.io" target="_blank">Personal Engineering Site (happydog060713.github.io)</a></li>
         </ul>
       </section>
