@@ -405,7 +405,7 @@
         <h1 class="post-title">Semantic Action Sessions & Decoupled Serving: Architecting Vision-Language-Action Models with TeleFuser</h1>
         <p class="subtitle">
           TeleFuser is an open-source inference and serving runtime for real-time generative models and interactive world systems.
-          This article analyzes the architectural evolution of Vision-Language-Action (VLA) support on the <code>vla_test</code> branch:
+          This article analyzes the architectural evolution of Vision-Language-Action (VLA) support within TeleFuser:
           introducing semantic action space contracts, replica-backed session leases, hybrid eager-graph denoising, and strict simulator boundary decoupling.
         </p>
         <div class="metric-badge-bar">
@@ -422,7 +422,7 @@
         <h1 class="post-title">语义化动作会话与仿真解耦：基于 TeleFuser 的具身智能 VLA 架构演进实践</h1>
         <p class="subtitle">
           TeleFuser 是一套面向实时生成模型与交互式世界系统的开源推理与服务运行架构。
-          本文基于 <code>vla_test</code> 特性分支，深入剖析具身大模型（Vision-Language-Action, VLA）在系统架构层面的演进全景：
+          本文深入剖析 TeleFuser 中具身大模型（Vision-Language-Action, VLA）系统架构的演进全景：
           从语义化动作空间契约、副本亲和会话租约（Session Lease），到动静混合 CUDA Graph 降噪加速与无头 MuJoCo 闭环仿真全链路验证。
         </p>
         <div class="metric-badge-bar">
@@ -437,9 +437,6 @@
       <div class="repo-badges">
         <a href="https://github.com/Tele-AI/TeleFuser" class="repo-link" target="_blank" rel="noopener">
           Upstream Main: Tele-AI/TeleFuser
-        </a>
-        <a href="https://github.com/Tele-AI/TeleFuser/tree/vla_test" class="repo-link" target="_blank" rel="noopener">
-          Branch: vla_test
         </a>
         <a href="https://happydog060713.github.io" class="repo-link" target="_blank" rel="noopener">
           Blog: happydog060713.github.io
@@ -471,7 +468,7 @@
             VLA models (such as <code>LingBot-VLA v2</code>) synthesize multi-camera visual feeds, proprioceptive joint states,
             and natural language instructions to predict continuous action trajectories (e.g., a <code>50 x 55</code> normalized action chunk).
             Deploying VLA policies exposed fundamental limitations in traditional diffusion serving pipelines.
-            Through the architectural restructuring on <code>vla_test</code>, three architectural principles were established:
+            Through TeleFuser's architectural restructuring for VLA, three architectural principles were established:
           </p>
           <ul>
             <li><strong>Explicit Semantics Over Implicit Shapes</strong>: Raw tensor dimensions (e.g., <code>[50, 55]</code>) carry zero physical meaning. Downstream robots must never infer joint order, normalization bounds, or coordinate systems by convention. Semantics must be encoded as explicit, typed contracts (<code>ActionSpaceSpec</code> / <code>ObservationSpaceSpec</code>) verified at session handshake.</li>
@@ -485,7 +482,7 @@
             具身大模型（如 <code>LingBot-VLA v2</code>）整合多路相机视觉流、本体关节状态与自然语言指令，
             输出连续动作轨迹块（如 <code>50 x 55</code> 维度的归一化动作序列）。
             将具身策略接入传统的扩散模型推理服务时，暴露出了结构性矛盾。
-            通过 <code>vla_test</code> 分支上的架构重构，确立了三条核心设计原则：
+            通过 TeleFuser 在具身智能方向上的架构重构，确立了三条核心设计原则：
           </p>
           <ul>
             <li><strong>显式语义契约优先于张量维度盲猜</strong>：无物理含义的张量维度（如 <code>[50, 55]</code>）极易因坐标系、关节排列或单位错位导致机械臂失控。系统引入强类型的 <code>ActionSpaceSpec</code> 与 <code>ObservationSpaceSpec</code>，在建立连接时完成双向语义校验。</li>
@@ -645,7 +642,7 @@
 
         <div class="lang-en">
           <p>
-            To rigorously prove transport neutrality and simulator independence, the <code>vla_test</code> branch introduces
+            To rigorously prove transport neutrality and simulator independence, TeleFuser introduces
             a full, standalone headless MuJoCo validation stack (<code>telefuser.integrations.sim.mujoco</code> and <code>examples/lingbot_vla_v2/lingbot_vla_v2_mujoco.py</code>).
             It isolates MuJoCo and OSMesa rendering inside an uncommitted virtual environment directory (<code>.venv-mujoco-libs</code>),
             requiring zero system <code>apt install</code> privileges and keeping inference containers clean.
@@ -674,7 +671,7 @@
         <div class="lang-zh">
           <p>
             为严格证实通用会话协议（<code>/v1/vla/session</code>）与语义契约的传输中立性与仿真解耦能力，
-            <code>vla_test</code> 分支构建了完整的本地无头 MuJoCo 仿真验证套件（<code>telefuser.integrations.sim.mujoco</code> 与 <code>examples/lingbot_vla_v2/lingbot_vla_v2_mujoco.py</code>）。
+            TeleFuser 构建了完整的本地无头 MuJoCo 仿真验证套件（<code>telefuser.integrations.sim.mujoco</code> 与 <code>examples/lingbot_vla_v2/lingbot_vla_v2_mujoco.py</code>）。
             该套件通过独立的本地动态库目录（<code>.venv-mujoco-libs</code>）自包含加载 MuJoCo 与 OSMesa，无需 <code>sudo apt install</code> 权限，确保推理环境零污染。
           </p>
           <p>
@@ -870,7 +867,6 @@
 
         <ul>
           <li><a href="https://github.com/Tele-AI/TeleFuser" target="_blank">TeleFuser Upstream Repository (main)</a></li>
-          <li><a href="https://github.com/Tele-AI/TeleFuser/tree/vla_test" target="_blank">TeleFuser VLA Development Branch (vla_test)</a></li>
           <li><a href="https://github.com/Robbyant/lingbot-vla-v2" target="_blank">LingBot-VLA v2 Official Repository</a></li>
           <li><a href="https://github.com/ModelTC/LightX2V" target="_blank">LightX2V: High-Performance Video Generation Engine</a></li>
           <li><a href="https://github.com/flashrt-project/FlashRT" target="_blank">FlashRT: Real-Time Multimodal Inference Runtime</a></li>
