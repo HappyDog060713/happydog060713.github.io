@@ -348,6 +348,33 @@
       color: var(--text-secondary);
     }
 
+    .arch-figure {
+      margin: 30px 0;
+      text-align: center;
+      background-color: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 16px;
+    }
+
+    .arch-img {
+      max-width: 100%;
+      height: auto;
+      border-radius: 6px;
+      border: 1px solid var(--border-color);
+      box-shadow: var(--shadow-sm);
+      display: block;
+      margin: 0 auto 12px;
+    }
+
+    figcaption {
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      line-height: 1.5;
+      text-align: left;
+      padding: 4px 8px;
+    }
+
     footer {
       border-top: 1px solid var(--border-color);
       padding-top: 24px;
@@ -557,6 +584,14 @@
       <section id="section-comparison">
         <h2 class="lang-en">3. Architecture Comparison: Pre-VLA vs. Current VLA Architecture</h2>
         <h2 class="lang-zh">3. 系统架构对比：前期架构 vs 现行 VLA 架构</h2>
+
+        <figure class="arch-figure">
+          <img src="telefuser_vla_architecture.png" alt="TeleFuser VLA System Architecture: From Perception to Control Execution" class="arch-img" />
+          <figcaption>
+            <span class="lang-en"><strong>Figure 1: TeleFuser VLA End-to-End System Architecture.</strong> <strong>(A) Robot &amp; Simulation Boundary:</strong> Multi-camera visual feeds and proprioceptive states are canonicalized via typed contracts (<code>ObservationSpaceSpec</code>, <code>ActionSpaceSpec</code>). <strong>(B) TeleFuser VLA Inference Engine:</strong> Hybrid execution combining dynamic eager prefix encoding with captured CUDA Graph action denoising (3.78x speedup on H100) managed under a replica-backed PipelinePool with session leases. <strong>(C) Transport &amp; Asynchronous Execution Pipeline:</strong> Overlapped async execution (<code>execute_ready_async</code>) achieving zero-bubble closed-loop streaming to MuJoCo simulation with +207 ms slack.</span>
+            <span class="lang-zh"><strong>图 1：TeleFuser VLA 端到端推理系统架构。</strong> <strong>(A) 机器人与仿真边界：</strong>多路相机流与本体状态通过强类型契约（<code>ObservationSpaceSpec</code>、<code>ActionSpaceSpec</code>）规范化；<strong>(B) TeleFuser VLA 推理引擎：</strong>采用 Eager 动态视觉前缀与 CUDA Graph 捕获去噪扩散循环的混合执行范式（H100 上达 3.78 倍加速），由支持会话租约的 PipelinePool 进行 Worker 亲和调度；<strong>(C) 传输与异步执行流水线：</strong>基于 <code>execute_ready_async</code> 机制实现推理与 MuJoCo 物理仿真的 100% 重叠掩盖（余量达 +207 ms），达成零气泡闭环控制。</span>
+          </figcaption>
+        </figure>
 
         <div class="table-wrapper">
           <table>
