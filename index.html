@@ -729,7 +729,7 @@
                 <td><strong><span class="lang-en">4. Action Denoising Loop</span><span class="lang-zh">4. 动作去噪循环 (10 步)</span></strong></td>
                 <td><strong><code>CUDA Graph Action Denoising</code></strong></td>
                 <td><strong>~125.3 ms</strong></td>
-                <td><span class="lang-en">Fixed shape [1, 50, 55]; eager mode took 607.8 ms (<strong>3.8x faster</strong>).</span><span class="lang-zh">固定 Shape 录制执行；Eager 模式需 607.8 ms（<strong>提速近 3.8 倍</strong>）。</span></td>
+                <td><span class="lang-en">Fixed shape [1, 50, 55]; eager mode took 607.8 ms (<strong>3.8x faster</strong>). (Isolated engine &amp; quantization ablations detailed in <a href="#section-benchmarks">Section 5</a>).</span><span class="lang-zh">固定 Shape 录制执行；Eager 模式需 607.8 ms（<strong>提速近 3.8 倍</strong>）。接口分层加速与量化消融详见 <a href="#section-benchmarks">第 5 节</a>。</span></td>
               </tr>
               <tr>
                 <td><strong><span class="lang-en">5. Action Chunk Egress</span><span class="lang-zh">5. 动作块数据下行下发</span></strong></td>
@@ -782,31 +782,25 @@
 
         <div class="lang-en">
           <p>
-            Real-time embodied control imposes hard real-time latency deadlines: inference must strictly complete within the physical execution window of the action chunk (e.g., 400 ms for an 8-step horizon at 20 Hz).
-            To rigorously quantify performance under production constraints, TeleFuser benchmarked LingBot-VLA v2 (6B) on a dedicated <strong>NVIDIA H100 80 GB SXM</strong> platform (CUDA 13.0, PyTorch 2.11.0+cu130, Transformers 5.14.1, batch size 1, fixed seed 7).
-            The evaluation dissects two critical optimization dimensions: <strong>CUDA Graph capture acceleration</strong> and <strong>low-bit quantization trade-offs</strong>.
+            While <a href="#section-mujoco">Section 4</a> verified end-to-end zero-bubble throughput from a macro simulation perspective, this section isolates the internal computational engine.
+            We systematically evaluate LingBot-VLA v2 (6B) on a dedicated <strong>NVIDIA H100 80 GB SXM</strong> platform across two dimensions: the speedup degradation curve of CUDA Graph across software abstraction layers, and the capacity trade-offs of low-bit quantization.
           </p>
 
-          <h3>5.1 CUDA Graph A/B Speedup Across Pipeline Scopes</h3>
+          <h3>5.1 CUDA Graph Speedup Across API Boundaries</h3>
           <p>
-            VLA diffusion policies present an asymmetric computational pattern: the multimodal vision-language prefix has dynamic token counts and resolutions, while the 10-step action denoising loop operates over static small tensors (<code>[1, 50, 55]</code>).
-            Under pure PyTorch eager execution, the denoising loop is severely bottlenecked by CPU-GPU driver launch overhead.
-            By capturing exclusively the fixed-horizon denoising loop into a CUDA Graph, TeleFuser eliminates kernel launch overhead while preserving eager flexibility for dynamic vision inputs.
+            As software abstractions expand from bare tensor execution to network serving, the relative weight of the captured denoising loop shifts according to Amdahl's law. Figure 2 quantifies this scaling behavior across four distinct boundaries:
           </p>
         </div>
 
         <div class="lang-zh">
           <p>
-            实体机器人闭环控制对计算时延有着近乎苛刻的硬实时要求：推理总耗时必须严格小于当前动作块的实际物理执行窗口（例如在 20 Hz 控制频率下，8 步动作块的物理窗口仅为 400 ms）。
-            为了严谨评估生产环境约束下的性能边界，TeleFuser 在 <strong>NVIDIA H100 80 GB SXM</strong> 平台上对 LingBot-VLA v2（6B）开展了系统性基准评测（CUDA 13.0，PyTorch 2.11.0+cu130，Transformers 5.14.1，Batch Size 1，固定种子 7）。
-            评测围绕两个核心工程维度展开：<strong>动静结合的 CUDA Graph 捕获加速</strong> 与 <strong>低比特量化显存/时延权衡</strong>。
+            <a href="#section-mujoco">第 4 节</a> 从宏观闭环视角验证了仿真交互中的端到端“零气泡”流水线；本节则下沉至推理引擎内部，深入剖析计算瓶颈与硬件资源边界。
+            在 <strong>NVIDIA H100 80 GB SXM</strong> 基准环境下，我们针对 LingBot-VLA v2（6B）系统评测了两个核心维度：CUDA Graph 在不同软件抽象层级间的收益衰减规律，以及低比特量化在各显存阶梯下的权衡表现。
           </p>
 
-          <h3>5.1 CUDA Graph 全链路多阶段加速效果（A/B 对比）</h3>
+          <h3>5.1 CUDA Graph 跨接口抽象层级的加速规律</h3>
           <p>
-            具身扩散策略具有显著的非对称计算特征：多模态视觉前缀的图像分辨率与提示词长度具有动态性，而 10 步动作去噪扩散循环的张量 Shape 严格固定（<code>[1, 50, 55]</code>）。
-            在纯 PyTorch Eager 模式下，去噪循环中大量细粒度小算子的反复发射导致 CPU-GPU 驱动层调度开销（Kernel Launch Overhead）占据了大部分推理耗时。
-            TeleFuser 通过仅对固定步长的去噪循环进行 CUDA Graph Capture，彻底消除了内核发射开销，同时保留了视觉前缀的动态灵活性。
+            随着调用范围从纯内核张量计算向外延伸至网络服务化，受阿姆达尔定律（Amdahl's law）支配，计算图捕获的相对增益逐步向外部系统开销收敛。图 2 详细量化了这一跨层级衰减过程：
           </p>
         </div>
 
