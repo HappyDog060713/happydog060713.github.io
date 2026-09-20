@@ -452,8 +452,9 @@
         <li><a href="#section-questions"><span class="lang-en">2. Four Fundamental Questions Driving the Architecture</span><span class="lang-zh">2. 驱动架构演进的四个核心命题</span></a></li>
         <li><a href="#section-comparison"><span class="lang-en">3. Architecture Comparison: Pre-VLA vs. Current VLA Architecture</span><span class="lang-zh">3. 系统架构对比：前期架构 vs 现行 VLA 架构</span></a></li>
         <li><a href="#section-mujoco"><span class="lang-en">4. MuJoCo Simulation Verification & Pipeline Latency Analysis</span><span class="lang-zh">4. MuJoCo 仿真闭环验证与全链路延迟分析</span></a></li>
-        <li><a href="#section-sop"><span class="lang-en">5. New Model Integration Workflow (Standard SOP)</span><span class="lang-zh">5. 新模型标准化接入作业流程（SOP）</span></a></li>
-        <li><a href="#section-reading"><span class="lang-en">6. Summary and Further Reading</span><span class="lang-zh">6. 总结与延伸参考</span></a></li>
+        <li><a href="#section-benchmarks"><span class="lang-en">5. Quantitative Evaluation: CUDA Graph & Quantization Profiles</span><span class="lang-zh">5. 推理优化深度评测：CUDA Graph 与量化消融分析</span></a></li>
+        <li><a href="#section-sop"><span class="lang-en">6. New Model Integration Workflow (Standard SOP)</span><span class="lang-zh">6. 新模型标准化接入作业流程（SOP）</span></a></li>
+        <li><a href="#section-reading"><span class="lang-en">7. Summary and Further Reading</span><span class="lang-zh">7. 总结与延伸参考</span></a></li>
       </ul>
     </div>
 
@@ -495,7 +496,7 @@
       <!-- SECTION 2: FOUR QUESTIONS -->
       <section id="section-questions">
         <h2 class="lang-en">2. Four Fundamental Questions Driving the Architecture</h2>
-        <h2 class="lang-zh">2. 架构演进方向</h2>
+        <h2 class="lang-zh">2. 驱动架构演进的四个核心命题</h2>
 
         <div class="lang-en">
           <h3>Question 1: Why does stateless request-response fail for closed-loop embodied AI?</h3>
@@ -538,7 +539,7 @@
         </div>
 
         <div class="lang-zh">
-          <h3>为什么传统的无状态“请求-响应”模式无法胜任具身闭环控制？</h3>
+          <h3>命题一：为什么传统的无状态“请求-响应”模式无法胜任具身闭环控制？</h3>
           <p>
             常规多模态生成模型处理的是离散、独立的单次计算任务：接收 Prompt，启动多步迭代，最终返回文件。
             然而，具身智能控制对时效性要求极高。如果网络延迟导致历史帧滞后到达，若仍盲目计算陈旧观测，不仅白白消耗算力，还会导致机械臂做出危险的过期动作。
@@ -547,7 +548,7 @@
             一旦客户端推送了更新的观察帧，未完成的过期推理任务将被直接抢占并标记为丢弃。
           </p>
 
-          <h3>语义化动作空间如何从根源上杜绝物理控制错误？</h3>
+          <h3>命题二：语义化动作空间如何从根源上杜绝物理控制错误？</h3>
           <p>
             过往模型代码往往将模型权重与特定机械臂的关节定义紧密硬编码在一起。
             TeleFuser 将其解耦为两层抽象：
@@ -560,7 +561,7 @@
             两者通过强类型的协议进行校验，在握手阶段即完成维度名称、物理单位、坐标系及控制频率的静态合规检查。
           </p>
 
-          <h3>动静混合 CUDA Graph 如何破局扩散策略的时延瓶颈？</h3>
+          <h3>命题三：动静混合 CUDA Graph 如何破局扩散策略的时延瓶颈？</h3>
           <p>
             对整个模型进行完整的 CUDA Graph Capture 是不可行的，因为多模态视觉 Prompt 长度和图像分辨率具有动态性；
             但若完全采用 PyTorch Eager 模式，由于动作去噪循环步数多、且单步张量较小（如 <code>50 x 55</code>），CPU-GPU 间的 Kernel Launch 开销会占据大量耗时。
@@ -568,7 +569,7 @@
             动态的多模态视觉编码前缀保持 Eager 模式执行，而步数与 Shape 严格固定的动作去噪扩散循环则被录制为可复用的 CUDA Graph。
           </p>
 
-          <h3>副本亲和会话租约（Session Lease）如何支撑多并发仿真与实体机器人？</h3>
+          <h3>命题四：副本亲和会话租约（Session Lease）如何支撑多并发仿真与实体机器人？</h3>
           <p>
             无需为每个机械臂环境单独启动独立的服务器进程，底层的 <code>PipelinePool</code> 扩展了副本亲和会话租约功能。
             客户端通过 <code>open_session</code> 从空闲池中申请并独占一个 Worker 副本；
@@ -774,10 +775,212 @@
         </div>
       </section>
 
-      <!-- SECTION 5: SOP -->
+      <!-- SECTION 5: BENCHMARKS -->
+      <section id="section-benchmarks">
+        <h2 class="lang-en">5. Quantitative Evaluation: CUDA Graph & Quantization Profiles</h2>
+        <h2 class="lang-zh">5. 推理优化深度评测：CUDA Graph 与量化消融分析</h2>
+
+        <div class="lang-en">
+          <p>
+            Real-time embodied control imposes hard real-time latency deadlines: inference must strictly complete within the physical execution window of the action chunk (e.g., 400 ms for an 8-step horizon at 20 Hz).
+            To rigorously quantify performance under production constraints, TeleFuser benchmarked LingBot-VLA v2 (6B) on a dedicated <strong>NVIDIA H100 80 GB SXM</strong> platform (CUDA 13.0, PyTorch 2.11.0+cu130, Transformers 5.14.1, batch size 1, fixed seed 7).
+            The evaluation dissects two critical optimization dimensions: <strong>CUDA Graph capture acceleration</strong> and <strong>low-bit quantization trade-offs</strong>.
+          </p>
+
+          <h3>5.1 CUDA Graph A/B Speedup Across Pipeline Scopes</h3>
+          <p>
+            VLA diffusion policies present an asymmetric computational pattern: the multimodal vision-language prefix has dynamic token counts and resolutions, while the 10-step action denoising loop operates over static small tensors (<code>[1, 50, 55]</code>).
+            Under pure PyTorch eager execution, the denoising loop is severely bottlenecked by CPU-GPU driver launch overhead.
+            By capturing exclusively the fixed-horizon denoising loop into a CUDA Graph, TeleFuser eliminates kernel launch overhead while preserving eager flexibility for dynamic vision inputs.
+          </p>
+        </div>
+
+        <div class="lang-zh">
+          <p>
+            实体机器人闭环控制对计算时延有着近乎苛刻的硬实时要求：推理总耗时必须严格小于当前动作块的实际物理执行窗口（例如在 20 Hz 控制频率下，8 步动作块的物理窗口仅为 400 ms）。
+            为了严谨评估生产环境约束下的性能边界，TeleFuser 在 <strong>NVIDIA H100 80 GB SXM</strong> 平台上对 LingBot-VLA v2（6B）开展了系统性基准评测（CUDA 13.0，PyTorch 2.11.0+cu130，Transformers 5.14.1，Batch Size 1，固定种子 7）。
+            评测围绕两个核心工程维度展开：<strong>动静结合的 CUDA Graph 捕获加速</strong> 与 <strong>低比特量化显存/时延权衡</strong>。
+          </p>
+
+          <h3>5.1 CUDA Graph 全链路多阶段加速效果（A/B 对比）</h3>
+          <p>
+            具身扩散策略具有显著的非对称计算特征：多模态视觉前缀的图像分辨率与提示词长度具有动态性，而 10 步动作去噪扩散循环的张量 Shape 严格固定（<code>[1, 50, 55]</code>）。
+            在纯 PyTorch Eager 模式下，去噪循环中大量细粒度小算子的反复发射导致 CPU-GPU 驱动层调度开销（Kernel Launch Overhead）占据了大部分推理耗时。
+            TeleFuser 通过仅对固定步长的去噪循环进行 CUDA Graph Capture，彻底消除了内核发射开销，同时保留了视觉前缀的动态灵活性。
+          </p>
+        </div>
+
+        <figure class="arch-figure">
+          <img src="telefuser_cuda_graph_speedup.png" alt="CUDA Graph Latency Reduction Across Execution Scopes" class="arch-img" />
+          <figcaption>
+            <span class="lang-en"><strong>Figure 2: CUDA Graph Latency Reduction Across Execution Scopes (LingBot-VLA v2 on NVIDIA H100).</strong> Denoising CUDA Graph delivers a <strong>3.96× speedup (-74.7% latency drop)</strong> in the direct core model (from 649.8 ms down to 164.2 ms), safely dropping core inference well below the 400 ms physical execution threshold (red dashed line). End-to-end service HTTP latency drops from 1362.1 ms to 929.8 ms (1.47× speedup).</span>
+            <span class="lang-zh"><strong>图 2：CUDA Graph 在不同执行范围下的时延缩减表现（基于 NVIDIA H100 测试 LingBot-VLA v2）。</strong> 去噪 CUDA Graph 将核心去噪推理耗时从 649.8 ms 骤降至 164.2 ms（<strong>提速 3.96 倍，延迟降低 74.7%</strong>），使核心推理稳稳落入 400 ms 物理控制窗口（红色虚线）之内；在端到端 HTTP 服务场景下整体提速达 1.47 倍（从 1362.1 ms 降至 929.8 ms）。</span>
+          </figcaption>
+        </figure>
+
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th><span class="lang-en">Evaluation Scope</span><span class="lang-zh">评测执行范围</span></th>
+                <th><span class="lang-en">BF16 Eager (Baseline)</span><span class="lang-zh">BF16 Eager (基准)</span></th>
+                <th><span class="lang-en">BF16 Denoising Graph</span><span class="lang-zh">BF16 去噪 CUDA Graph</span></th>
+                <th><span class="lang-en">Latency Reduction</span><span class="lang-zh">耗时降幅</span></th>
+                <th><span class="lang-en">Speedup Ratio</span><span class="lang-zh">加速比</span></th>
+                <th><span class="lang-en">Physical Real-Time Status</span><span class="lang-zh">物理实时达标判定</span></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong><span class="lang-en">Direct Core Model</span><span class="lang-zh">模型核心去噪循环</span></strong></td>
+                <td>649.790 ms</td>
+                <td><strong>164.226 ms</strong></td>
+                <td><strong>-74.73%</strong></td>
+                <td><strong>3.957×</strong></td>
+                <td><span style="color: #16a34a; font-weight: 600;">✓ Meets Budget (&lt;400 ms)</span></td>
+              </tr>
+              <tr>
+                <td><strong><span class="lang-en">Direct Runtime Request</span><span class="lang-zh">运行时单次直接调用</span></strong></td>
+                <td>649.843 ms</td>
+                <td><strong>164.910 ms</strong></td>
+                <td><strong>-74.62%</strong></td>
+                <td><strong>3.941×</strong></td>
+                <td><span style="color: #16a34a; font-weight: 600;">✓ Meets Budget (&lt;400 ms)</span></td>
+              </tr>
+              <tr>
+                <td><strong><span class="lang-en">Service Target Inference</span><span class="lang-zh">服务端模型推理 (含前缀)</span></strong></td>
+                <td>1317.571 ms</td>
+                <td><strong>883.986 ms</strong></td>
+                <td>-32.91%</td>
+                <td>1.490×</td>
+                <td><span style="color: #0284c7; font-weight: 600;">Pipelined with execute_ready_async</span></td>
+              </tr>
+              <tr>
+                <td><strong><span class="lang-en">Service HTTP End-to-End</span><span class="lang-zh">服务端 HTTP 端到端总时延</span></strong></td>
+                <td>1362.134 ms</td>
+                <td><strong>929.761 ms</strong></td>
+                <td>-31.74%</td>
+                <td>1.465×</td>
+                <td><span style="color: #0284c7; font-weight: 600;">Includes JSON-Base64 & transport</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="lang-en">
+          <h3>5.2 Quantization Profiles vs. CUDA Graph: Latency & VRAM Trade-offs</h3>
+          <p>
+            While CUDA Graph optimizes latency without altering precision, memory-constrained robotic platforms (e.g., edge workstations or onboard consumer GPUs) often lack 80 GB datacenter VRAM.
+            TeleFuser benchmarks four quantization profiles alongside BF16 eager and CUDA Graph baselines:
+          </p>
+          <ul>
+            <li><strong>BF16 CUDA Graph</strong>: Provides the absolute fastest core denoising (<strong>131.6 ms, 4.84× vs eager</strong>) with zero numerical degradation and negligible memory overhead (+30 MiB graph buffers).</li>
+            <li><strong>Fused FP8 + Graph (<code>fused-fp8-graph</code>)</strong>: Combines FP8 quantized model weights with CUDA Graph execution, achieving <strong>162.5 ms (3.92× vs eager)</strong> while slashing peak allocated VRAM to 10.86 GB (-12.8% savings). It represents the optimal sweet spot for throughput-critical VLA deployments.</li>
+            <li><strong>BitsAndBytes NF4 (<code>bnb-nf4</code>)</strong>: Compresses weights to 4-bit NormalFloat, cutting peak VRAM in half to <strong>6.33 GiB (-48.0% savings)</strong>. This enables running LingBot-VLA v2 on sub-8GB consumer GPUs (such as the RTX 4060 8GB), albeit at a higher per-step latency (924.7 ms, 0.69× relative speed).</li>
+            <li><strong>TorchAO FP8 (<code>torchao-fp8</code>)</strong>: Lowers memory to 8.24 GiB (-32.3% savings) but incurs un-graphed runtime kernel overhead (1335.0 ms, 0.48× relative speed).</li>
+          </ul>
+        </div>
+
+        <div class="lang-zh">
+          <h3>5.2 量化特性矩阵与 CUDA Graph：时延与显存综合权衡</h3>
+          <p>
+            CUDA Graph 在不改变模型精度的前提下实现了极致的时延缩减；而在资源受限的边缘具身平台（如机载计算芯片、消费级工作站）中，往往无法配备 80 GB 的数据中心显存。
+            为此，TeleFuser 针对四种低比特量化方案与 BF16 基准展开了详尽评测：
+          </p>
+          <ul>
+            <li><strong>BF16 CUDA Graph</strong>：提供极致的去噪速度（<strong>131.6 ms，相对 Eager 达 4.84 倍加速</strong>），零精度损失，显存开销仅微幅增加 30 MiB（图执行缓冲区）。</li>
+            <li><strong>Fused FP8 + Graph (<code>fused-fp8-graph</code>)</strong>：融合 FP8 权重与 CUDA Graph 捕获，在维持 <strong>162.5 ms 极速推理（3.92 倍加速）</strong>的同时，将峰值显存降至 10.86 GB（节省 12.8%）。这是高吞吐量机器人服务的最优平衡方案。</li>
+            <li><strong>BitsAndBytes NF4 (<code>bnb-nf4</code>)</strong>：采用 4-bit NormalFloat 压缩，将显存暴降至 <strong>6.33 GiB（节省 48.0%）</strong>，使得 6B 具身大模型能够直接跑在 8 GB 消费级显卡（如 RTX 4060）上，但推理时延有所增加（924.7 ms，相对速度 0.69×）。</li>
+            <li><strong>TorchAO FP8 (<code>torchao-fp8</code>)</strong>：显存降至 8.24 GiB（节省 32.3%），但由于未捕获计算图，内核解包与 Launch 开销导致耗时达 1335.0 ms（相对速度 0.48×）。</li>
+          </ul>
+        </div>
+
+        <figure class="arch-figure">
+          <img src="telefuser_quantization_benchmark.png" alt="LingBot-VLA v2 Optimization Matrix: Quantization vs. CUDA Graph" class="arch-img" />
+          <figcaption>
+            <span class="lang-en"><strong>Figure 3: LingBot-VLA v2 (6B) Optimization Matrix: Quantization vs. CUDA Graph Trade-offs.</strong> <strong>(A) Core Denoising Latency &amp; Speedup:</strong> CUDA Graph (131.6 ms) and Fused FP8 + Graph (162.5 ms) are the only profiles comfortably clearing the 400 ms real-time horizon. <strong>(B) Peak VRAM Footprint &amp; Hardware Compatibility:</strong> <code>bnb-nf4</code> reduces VRAM footprint to 6.33 GiB (-48.0%), fitting comfortably beneath the 8 GB consumer GPU ceiling (RTX 4060). <code>fused-fp8-graph</code> fits safely inside the 12 GB envelope (RTX 4070) with minimal latency penalty.</span>
+            <span class="lang-zh"><strong>图 3：LingBot-VLA v2 (6B) 优化矩阵：量化与 CUDA Graph 的综合权衡。</strong> <strong>(A) 核心去噪时延与相对速度：</strong>仅有 BF16 CUDA Graph（131.6 ms）与 Fused FP8 + Graph（162.5 ms）能够稳稳满足 400 ms 物理实时窗口要求；<strong>(B) 显存占用与硬件兼容性：</strong><code>bnb-nf4</code> 将显存大幅削减至 6.33 GiB（-48.0%），使模型能顺利部署于 8 GB 消费级显卡（RTX 4060）；<code>fused-fp8-graph</code> 则可轻松置于 12 GB 显存内（RTX 4070），兼顾极速推理与显存轻量化。</span>
+          </figcaption>
+        </figure>
+
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th><span class="lang-en">Quantization Profile</span><span class="lang-zh">量化配置方案</span></th>
+                <th><span class="lang-en">Execution Mode</span><span class="lang-zh">执行模式</span></th>
+                <th><span class="lang-en">Mean Latency</span><span class="lang-zh">平均核心耗时</span></th>
+                <th><span class="lang-en">Relative Speed</span><span class="lang-zh">相对速度</span></th>
+                <th><span class="lang-en">Peak Allocated VRAM</span><span class="lang-zh">峰值分配显存</span></th>
+                <th><span class="lang-en">VRAM Savings</span><span class="lang-zh">显存降幅</span></th>
+                <th><span class="lang-en">Deployment Fit</span><span class="lang-zh">最佳适用场景</span></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>BF16 eager</strong></td>
+                <td>Eager PyTorch</td>
+                <td>637.7 ms</td>
+                <td>1.00× (Ref)</td>
+                <td>12,457 MiB (~12.17 GiB)</td>
+                <td>0.0%</td>
+                <td><span class="lang-en">Debugging & numerical parity verification</span><span class="lang-zh">开发调试与数值基准验证</span></td>
+              </tr>
+              <tr style="background-color: var(--accent-subtle);">
+                <td><strong>BF16 CUDA Graph</strong></td>
+                <td><strong>Graph Captured</strong></td>
+                <td><strong>131.6 ms</strong></td>
+                <td><strong>4.84×</strong></td>
+                <td>12,487 MiB (~12.19 GiB)</td>
+                <td>+0.2%</td>
+                <td><span class="lang-en">Datacenter production & closed-loop robotics (H100/A100)</span><span class="lang-zh">生产环境极致实时闭环控制（首选）</span></td>
+              </tr>
+              <tr style="background-color: var(--accent-subtle);">
+                <td><strong>fused-fp8-graph</strong></td>
+                <td><strong>FP8 + Graph</strong></td>
+                <td><strong>162.5 ms</strong></td>
+                <td><strong>3.92×</strong></td>
+                <td><strong>10,862 MiB (~10.61 GiB)</strong></td>
+                <td><strong>-12.8%</strong></td>
+                <td><span class="lang-en">12 GB GPUs (RTX 4070) & high-density multi-replica serving</span><span class="lang-zh">12 GB 级显卡与高密度多副本集群服务</span></td>
+              </tr>
+              <tr>
+                <td><strong>torchao-fp8</strong></td>
+                <td>TorchAO Eager</td>
+                <td>1335.0 ms</td>
+                <td>0.48×</td>
+                <td>8,438 MiB (~8.24 GiB)</td>
+                <td>-32.3%</td>
+                <td><span class="lang-en">Memory-constrained testing without CUDA Graph</span><span class="lang-zh">显存受限但未适配计算图的环境</span></td>
+              </tr>
+              <tr>
+                <td><strong>bnb-nf4</strong></td>
+                <td>BitsAndBytes 4-bit</td>
+                <td>924.7 ms</td>
+                <td>0.69×</td>
+                <td><strong>6,479 MiB (~6.33 GiB)</strong></td>
+                <td><strong>-48.0%</strong></td>
+                <td><span class="lang-en">8 GB consumer / edge onboard GPUs (RTX 4060)</span><span class="lang-zh">8 GB 机载边缘显卡与消费级终端（极端低显存）</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="callout">
+          <div class="callout-title"><span class="lang-en">Engineering Takeaways: Speed vs. Capacity Separation</span><span class="lang-zh">工程启示：时延优化与容量优化的正交分离</span></div>
+          <p class="lang-en">
+            The quantitative matrix demonstrates an essential architectural insight: <strong>CUDA Graph is a pure speed multiplier</strong> (nearly 4× to 5× speedup with 0% precision loss and negligible memory impact), whereas <strong>quantization is primarily a capacity and footprint enabler</strong>. For real-time physical robotics, combining CUDA Graph with fused FP8 (<code>fused-fp8-graph</code>) offers the best of both worlds: robust real-time execution (&lt;200 ms) and a slim 10.6 GB footprint deployable on standard desktop workstations.
+          </p>
+          <p class="lang-zh">
+            评测数据揭示了一个核心架构工程结论：<strong>CUDA Graph 是纯粹的“速度放大器”</strong>（近 4～5 倍提速、零精度损失、且几乎不增加显存），而<strong>量化技术则主要充当“容量与显存解耦器”</strong>。在要求硬实时的物理机器人场景下，将 CUDA Graph 与 Fused FP8 结合（<code>fused-fp8-graph</code>）达成了最佳平衡：既确保了远低于 400 ms 物理窗口的实时执行，又将显存压缩至 10.6 GB，使得顶级具身模型能够直接部署在桌面级工作站上。
+          </p>
+        </div>
+      </section>
+
+      <!-- SECTION 6: SOP -->
       <section id="section-sop">
-        <h2 class="lang-en">5. New Model Integration Workflow (Standard SOP)</h2>
-        <h2 class="lang-zh">5. 新模型标准化接入作业流程（SOP）</h2>
+        <h2 class="lang-en">6. New Model Integration Workflow (Standard SOP)</h2>
+        <h2 class="lang-zh">6. 新模型标准化接入作业流程（SOP）</h2>
 
         <div class="lang-en">
           <p>
@@ -844,10 +1047,10 @@
         </div>
       </section>
 
-      <!-- SECTION 6: READING -->
+      <!-- SECTION 7: READING -->
       <section id="section-reading">
-        <h2 class="lang-en">6. Summary and Further Reading</h2>
-        <h2 class="lang-zh">6. 总结与延伸参考</h2>
+        <h2 class="lang-en">7. Summary and Further Reading</h2>
+        <h2 class="lang-zh">7. 总结与延伸参考</h2>
 
         <div class="lang-en">
           <p>
@@ -860,7 +1063,8 @@
         <div class="lang-zh">
           <p>
             从单一的扩散生成脚本演进为语义化、高解耦的 VLA 具身服务架构，是 TeleFuser 框架迈向物理世界智能的关键一步。
-            本项目参考或学习了以下项目
+            通过强类型契约、零仿真环境依赖隔离与 <code>PipelinePool</code> 副本亲和会话租约的融合，
+            系统为下一代端到端机器人策略与闭环物理智能构筑了高吞吐、高可靠的工程底座。
           </p>
         </div>
 
