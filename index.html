@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Semantic Action Sessions & Decoupled Serving: Architecting Vision-Language-Action Models with TeleFuser</title>
+  <title>面向具身闭环控制的 VLA 推理服务架构演进与实践 | Evolving VLA Serving Architecture for Embodied Closed-Loop Control</title>
   <style>
     :root {
       --bg-primary: #ffffff;
@@ -402,11 +402,11 @@
 
       <!-- ENGLISH TITLE -->
       <div class="lang-en">
-        <h1 class="post-title">Semantic Action Sessions & Decoupled Serving: Architecting Vision-Language-Action Models with TeleFuser</h1>
+        <h1 class="post-title">Evolving VLA Serving Architecture for Embodied Closed-Loop Control</h1>
         <p class="subtitle">
           TeleFuser is an open-source inference and serving runtime for real-time generative models and interactive world systems.
-          This article analyzes the architectural evolution of Vision-Language-Action (VLA) support within TeleFuser:
-          introducing semantic action space contracts, replica-backed session leases, hybrid eager-graph denoising, and strict simulator boundary decoupling.
+          This article analyzes the architectural evolution of Vision-Language-Action (VLA) serving within TeleFuser:
+          strict simulator boundary decoupling, semantic action contracts, hybrid eager-graph CUDA Graph acceleration, and end-to-end headless MuJoCo closed-loop verification.
         </p>
         <div class="metric-badge-bar">
           <div class="metric-title">1 × H100: End-to-End Real-Time Action Denoising & Headless MuJoCo Closed-Loop Verification</div>
@@ -419,11 +419,11 @@
 
       <!-- CHINESE TITLE -->
       <div class="lang-zh">
-        <h1 class="post-title">语义化动作会话与仿真解耦：基于 TeleFuser 的具身智能 VLA 架构演进实践</h1>
+        <h1 class="post-title">面向具身闭环控制的 VLA 推理服务架构演进与实践</h1>
         <p class="subtitle">
           TeleFuser 是一套面向实时生成模型与交互式世界系统的开源推理与服务运行架构。
-          本文深入剖析 TeleFuser 中具身大模型（Vision-Language-Action, VLA）系统架构的演进全景：
-          从语义化动作空间契约、副本亲和会话租约（Session Lease），到动静混合 CUDA Graph 降噪加速与无头 MuJoCo 闭环仿真全链路验证。
+          本文深入剖析 TeleFuser 中具身大模型（Vision-Language-Action, VLA）推理服务架构的演进全景：
+          从物理仿真边界解耦、语义化动作空间契约，到动静混合 CUDA Graph 降噪加速与无头 MuJoCo 闭环仿真“零气泡”流水线验证。
         </p>
         <div class="metric-badge-bar">
           <div class="metric-title">单卡 H100：实时动作去噪推理与无头 MuJoCo 闭环仿真验证</div>
@@ -1049,6 +1049,9 @@
       document.body.setAttribute('data-lang', lang);
       document.getElementById('btnEn').classList.toggle('active', lang === 'en');
       document.getElementById('btnZh').classList.toggle('active', lang === 'zh');
+      document.title = lang === 'zh'
+        ? '面向具身闭环控制的 VLA 推理服务架构演进与实践'
+        : 'Evolving VLA Serving Architecture for Embodied Closed-Loop Control';
       localStorage.setItem('preferred_lang', lang);
     }
 
