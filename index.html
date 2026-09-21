@@ -448,11 +448,11 @@
       <h4 class="lang-en">Contents</h4>
       <h4 class="lang-zh">文章目录</h4>
       <ul>
-        <li><a href="#section-insights"><span class="lang-en">1. Architectural Insights & Core Principles</span><span class="lang-zh">1. 核心架构认知与设计原则</span></a></li>
-        <li><a href="#section-questions"><span class="lang-en">2. Four Fundamental Questions Driving the Architecture</span><span class="lang-zh">2. 驱动架构演进的四个核心命题</span></a></li>
-        <li><a href="#section-comparison"><span class="lang-en">3. Architecture Comparison: Pre-VLA vs. Current VLA Architecture</span><span class="lang-zh">3. 系统架构对比：前期架构 vs 现行 VLA 架构</span></a></li>
+        <li><a href="#section-insights"><span class="lang-en">1. Core Architecture</span><span class="lang-zh">1. 核心架构</span></a></li>
+        <li><a href="#section-questions"><span class="lang-en">2. Architecture Evolution Directions</span><span class="lang-zh">2. 架构演进方向</span></a></li>
+        <li><a href="#section-comparison"><span class="lang-en">3. Pre-VLA Architecture vs. Current Architecture</span><span class="lang-zh">3. 前期架构VS当前架构</span></a></li>
         <li><a href="#section-mujoco"><span class="lang-en">4. MuJoCo Simulation Verification & Pipeline Latency Analysis</span><span class="lang-zh">4. MuJoCo 仿真闭环验证与全链路延迟分析</span></a></li>
-        <li><a href="#section-benchmarks"><span class="lang-en">5. Quantitative Evaluation: CUDA Graph & Quantization Profiles</span><span class="lang-zh">5. 推理优化深度评测：CUDA Graph 与量化消融分析</span></a></li>
+        <li><a href="#section-benchmarks"><span class="lang-en">5. Quantitative Evaluation: CUDA Graph & Quantization</span><span class="lang-zh">5. 推理优化深度评测：CUDA Graph 与量化</span></a></li>
         <li><a href="#section-sop"><span class="lang-en">6. New Model Integration Workflow (Standard SOP)</span><span class="lang-zh">6. 新模型标准化接入作业流程（SOP）</span></a></li>
         <li><a href="#section-reading"><span class="lang-en">7. Summary and Further Reading</span><span class="lang-zh">7. 总结与延伸参考</span></a></li>
       </ul>
@@ -461,8 +461,8 @@
     <article>
       <!-- SECTION 1: INSIGHTS -->
       <section id="section-insights">
-        <h2 class="lang-en">1. Architectural Insights & Core Principles</h2>
-        <h2 class="lang-zh">1. 核心架构认知与设计原则</h2>
+        <h2 class="lang-en">1. Core Architecture</h2>
+        <h2 class="lang-zh">1. 核心架构</h2>
 
         <div class="lang-en">
           <p>
@@ -493,13 +493,13 @@
         </div>
       </section>
 
-      <!-- SECTION 2: FOUR QUESTIONS -->
+      <!-- SECTION 2: ARCHITECTURE EVOLUTION -->
       <section id="section-questions">
-        <h2 class="lang-en">2. Four Fundamental Questions Driving the Architecture</h2>
-        <h2 class="lang-zh">2. 驱动架构演进的四个核心命题</h2>
+        <h2 class="lang-en">2. Architecture Evolution Directions</h2>
+        <h2 class="lang-zh">2. 架构演进方向</h2>
 
         <div class="lang-en">
-          <h3>Question 1: Why does stateless request-response fail for closed-loop embodied AI?</h3>
+          <h3>Stateless Request-Response Fails for Closed-Loop Embodied AI</h3>
           <p>
             Standard video or image generation handles isolated, batch requests: a prompt arrives, a long denoising sequence runs,
             and artifacts return. Closed-loop robotics operates on tight control budgets. If network latency delays an observation,
@@ -509,7 +509,7 @@
             When a new observation arrives before the previous inference finishes, the runtime preempts and supersedes the outdated work.
           </p>
 
-          <h3>Question 2: How do semantic action spaces prevent physical control errors?</h3>
+          <h3>Current Project Architecture</h3>
           <p>
             Upstream VLA implementations frequently couple model weights directly to a specific robot's joint order.
             TeleFuser decouples this into two formal abstractions:
@@ -522,24 +522,17 @@
             Neither component guesses formats. Every session handshake validates representation, dimension names, units, coordinate frames, and control rate.
           </p>
 
-          <h3>Question 3: How does hybrid eager-graph execution resolve latency in multimodal diffusion policies?</h3>
+          <h3>CUDA Graph Mitigates Inference Latency Bottlenecks</h3>
           <p>
             Full-model CUDA Graph capture fails on VLA models because language prompts and visual image resolutions vary dynamically.
             Conversely, pure PyTorch eager mode incurs severe kernel launch latency during the multi-step action denoising loop (where shapes are small and static, e.g., <code>50 x 55</code>).
             TeleFuser implements a <strong>Hybrid Execution Architecture</strong>:
             the dynamic multimodal visual prefix runs eagerly, while the fixed-horizon iterative action-denoising loop is captured into a reusable CUDA Graph.
           </p>
-
-          <h3>Question 4: How does replica-backed session leasing scale across concurrent robot environments?</h3>
-          <p>
-            Instead of spinning up standalone server processes for each robot, <code>PipelinePool</code> is extended with replica-backed session leases.
-            Calling <code>open_session</code> assigns a dedicated worker replica to a <code>session_id</code>.
-            All calls through <code>acquire_session</code> route exclusively to that worker, maintaining deterministic lifecycle management while preserving standard stateless capacity for non-VLA tasks.
-          </p>
         </div>
 
         <div class="lang-zh">
-          <h3>为什么传统的无状态“请求-响应”模式无法胜任具身闭环控制？</h3>
+          <h3>传统的无状态“请求-响应”模式无法胜任具身闭环控制</h3>
           <p>
             常规多模态生成模型处理的是离散、独立的单次计算任务：接收 Prompt，启动多步迭代，最终返回文件。
             然而，具身智能控制对时效性要求极高。如果网络延迟导致历史帧滞后到达，若仍盲目计算陈旧观测，不仅白白消耗算力，还会导致机械臂做出危险的过期动作。
@@ -548,7 +541,7 @@
             一旦客户端推送了更新的观察帧，未完成的过期推理任务将被直接抢占并标记为丢弃。
           </p>
 
-          <h3>语义化动作空间如何从根源上杜绝物理控制错误？</h3>
+          <h3>当前项目架构</h3>
           <p>
             过往模型代码往往将模型权重与特定机械臂的关节定义紧密硬编码在一起。
             TeleFuser 将其解耦为两层抽象：
@@ -561,27 +554,20 @@
             两者通过强类型的协议进行校验，在握手阶段即完成维度名称、物理单位、坐标系及控制频率的静态合规检查。
           </p>
 
-          <h3>动静混合 CUDA Graph 如何破局扩散策略的时延瓶颈？</h3>
+          <h3>CUDA Graph降低推理速度瓶颈</h3>
           <p>
             对整个模型进行完整的 CUDA Graph Capture 是不可行的，因为多模态视觉 Prompt 长度和图像分辨率具有动态性；
             但若完全采用 PyTorch Eager 模式，由于动作去噪循环步数多、且单步张量较小（如 <code>50 x 55</code>），CPU-GPU 间的 Kernel Launch 开销会占据大量耗时。
             架构引入了<strong>动静结合的混合执行机制</strong>：
             动态的多模态视觉编码前缀保持 Eager 模式执行，而步数与 Shape 严格固定的动作去噪扩散循环则被录制为可复用的 CUDA Graph。
           </p>
-
-          <h3>副本亲和会话租约（Session Lease）如何支撑多并发仿真与实体机器人？</h3>
-          <p>
-            无需为每个机械臂环境单独启动独立的服务器进程，底层的 <code>PipelinePool</code> 扩展了副本亲和会话租约功能。
-            客户端通过 <code>open_session</code> 从空闲池中申请并独占一个 Worker 副本；
-            后续的所有控制流指令（<code>acquire_session</code>）均直接且排他性地路由至该 Worker，连接断开时自动回收，兼顾了有状态独占与无状态并发。
-          </p>
         </div>
       </section>
 
       <!-- SECTION 3: ARCHITECTURE COMPARISON -->
       <section id="section-comparison">
-        <h2 class="lang-en">3. Architecture Comparison: Pre-VLA vs. Current VLA Architecture</h2>
-        <h2 class="lang-zh">3. 系统架构对比：前期架构 vs 现行 VLA 架构</h2>
+        <h2 class="lang-en">3. Pre-VLA Architecture vs. Current Architecture</h2>
+        <h2 class="lang-zh">3. 前期架构VS当前架构</h2>
 
         <figure class="arch-figure">
           <img src="telefuser_vla_architecture.png" alt="TeleFuser VLA System Architecture: From Perception to Control Execution" class="arch-img" />
@@ -777,8 +763,8 @@
 
       <!-- SECTION 5: BENCHMARKS -->
       <section id="section-benchmarks">
-        <h2 class="lang-en">5. Quantitative Evaluation: CUDA Graph & Quantization Profiles</h2>
-        <h2 class="lang-zh">5. 推理优化深度评测：CUDA Graph 与量化消融分析</h2>
+        <h2 class="lang-en">5. Quantitative Evaluation: CUDA Graph & Quantization</h2>
+        <h2 class="lang-zh">5. 推理优化深度评测：CUDA Graph 与量化</h2>
 
         <div class="lang-en">
           <p>
