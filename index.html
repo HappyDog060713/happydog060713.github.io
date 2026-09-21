@@ -907,7 +907,6 @@
                 <th><span class="lang-en">Relative Speed</span><span class="lang-zh">相对速度</span></th>
                 <th><span class="lang-en">Peak Allocated VRAM</span><span class="lang-zh">峰值分配显存</span></th>
                 <th><span class="lang-en">VRAM Savings</span><span class="lang-zh">显存降幅</span></th>
-                <th><span class="lang-en">Deployment Fit</span><span class="lang-zh">最佳适用场景</span></th>
               </tr>
             </thead>
             <tbody>
@@ -918,7 +917,6 @@
                 <td>1.00× (Ref)</td>
                 <td>12,457 MiB (~12.17 GiB)</td>
                 <td>0.0%</td>
-                <td><span class="lang-en">Debugging & numerical parity verification</span><span class="lang-zh">开发调试与数值基准验证</span></td>
               </tr>
               <tr style="background-color: var(--accent-subtle);">
                 <td><strong>BF16 CUDA Graph</strong></td>
@@ -927,7 +925,6 @@
                 <td><strong>4.84×</strong></td>
                 <td>12,487 MiB (~12.19 GiB)</td>
                 <td>+0.2%</td>
-                <td><span class="lang-en">Datacenter production & closed-loop robotics (H100/A100)</span><span class="lang-zh">生产环境极致实时闭环控制（首选）</span></td>
               </tr>
               <tr style="background-color: var(--accent-subtle);">
                 <td><strong>fused-fp8-graph</strong></td>
@@ -936,7 +933,6 @@
                 <td><strong>3.92×</strong></td>
                 <td><strong>10,862 MiB (~10.61 GiB)</strong></td>
                 <td><strong>-12.8%</strong></td>
-                <td><span class="lang-en">12 GB GPUs (RTX 4070) & high-density multi-replica serving</span><span class="lang-zh">12 GB 级显卡与高密度多副本集群服务</span></td>
               </tr>
               <tr>
                 <td><strong>torchao-fp8</strong></td>
@@ -945,7 +941,6 @@
                 <td>0.48×</td>
                 <td>8,438 MiB (~8.24 GiB)</td>
                 <td>-32.3%</td>
-                <td><span class="lang-en">Memory-constrained testing without CUDA Graph</span><span class="lang-zh">显存受限但未适配计算图的环境</span></td>
               </tr>
               <tr>
                 <td><strong>bnb-nf4</strong></td>
@@ -954,20 +949,9 @@
                 <td>0.69×</td>
                 <td><strong>6,479 MiB (~6.33 GiB)</strong></td>
                 <td><strong>-48.0%</strong></td>
-                <td><span class="lang-en">8 GB consumer / edge onboard GPUs (RTX 4060)</span><span class="lang-zh">8 GB 机载边缘显卡与消费级终端（极端低显存）</span></td>
               </tr>
             </tbody>
           </table>
-        </div>
-
-        <div class="callout">
-          <div class="callout-title"><span class="lang-en">Engineering Takeaways: Speed vs. Capacity Separation</span><span class="lang-zh">工程启示：时延优化与容量优化的正交分离</span></div>
-          <p class="lang-en">
-            The quantitative matrix demonstrates an essential architectural insight: <strong>CUDA Graph is a pure speed multiplier</strong> (nearly 4× to 5× speedup with 0% precision loss and negligible memory impact), whereas <strong>quantization is primarily a capacity and footprint enabler</strong>. For real-time physical robotics, combining CUDA Graph with fused FP8 (<code>fused-fp8-graph</code>) offers the best of both worlds: robust real-time execution (&lt;200 ms) and a slim 10.6 GB footprint deployable on standard desktop workstations.
-          </p>
-          <p class="lang-zh">
-            评测数据揭示了一个核心架构工程结论：<strong>CUDA Graph 是纯粹的“速度放大器”</strong>（近 4～5 倍提速、零精度损失、且几乎不增加显存），而<strong>量化技术则主要充当“容量与显存解耦器”</strong>。在要求硬实时的物理机器人场景下，将 CUDA Graph 与 Fused FP8 结合（<code>fused-fp8-graph</code>）达成了最佳平衡：既确保了远低于 400 ms 物理窗口的实时执行，又将显存压缩至 10.6 GB，使得顶级具身模型能够直接部署在桌面级工作站上。
-          </p>
         </div>
       </section>
 
@@ -1049,16 +1033,12 @@
         <div class="lang-en">
           <p>
             The transition from monolithic diffusion scripts to a decoupled, semantic VLA serving infrastructure represents
-            a key milestone for TeleFuser. By enforcing typed contracts, isolating physical simulator dependencies, and unifying
-            stateful session leases within <code>PipelinePool</code>, the framework establishes a solid architectural foundation
-            for real-time embodied foundation models.
+            a key milestone for TeleFuser.
           </p>
         </div>
         <div class="lang-zh">
           <p>
             从单一的扩散生成脚本演进为语义化、高解耦的 VLA 具身服务架构，是 TeleFuser 框架迈向物理世界智能的关键一步。
-            通过强类型契约、零仿真环境依赖隔离与 <code>PipelinePool</code> 副本亲和会话租约的融合，
-            系统为下一代端到端机器人策略与闭环物理智能构筑了高吞吐、高可靠的工程底座。
           </p>
         </div>
 
