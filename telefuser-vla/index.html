@@ -6,14 +6,14 @@
   <title>面向具身闭环控制的 VLA 推理服务架构演进与实践</title>
 
   <!-- SEO & Link Preview Metadata (微信、飞书、QQ、钉钉、Slack、浏览器分享摘要卡片) -->
-  <meta name="description" content="基于 TeleFuser 的具身大模型（VLA）推理服务架构演进：从物理仿真边界解耦、语义化动作空间契约，到动静混合 CUDA Graph 降噪加速（3.78x提速至173ms）与无头 MuJoCo 闭环仿真“零气泡”全链路验证。">
+  <meta name="description" content="基于 TeleFuser 的具身大模型（VLA）推理服务架构演进：从物理仿真边界解耦、语义化动作空间契约，到动静混合 CUDA Graph 降噪加速与无头 MuJoCo 闭环仿真流水线验证。">
   <meta name="author" content="HappyDog0713">
 
   <!-- Open Graph Protocol (用于生成带图文简介的链接分享卡片) -->
   <meta property="og:type" content="article">
   <meta property="og:url" content="https://happydog060713.github.io/telefuser-vla/">
   <meta property="og:title" content="面向具身闭环控制的 VLA 推理服务架构演进与实践">
-  <meta property="og:description" content="基于 TeleFuser 的具身大模型（VLA）推理服务架构演进：从物理仿真边界解耦、语义化动作空间契约，到动静混合 CUDA Graph 降噪加速与无头 MuJoCo 闭环仿真“零气泡”全链路验证。">
+  <meta property="og:description" content="基于 TeleFuser 的具身大模型（VLA）推理服务架构演进：从物理仿真边界解耦、语义化动作空间契约，到动静混合 CUDA Graph 降噪加速与无头 MuJoCo 闭环仿真流水线验证。">
   <meta property="og:image" content="https://happydog060713.github.io/telefuser-vla/telefuser_vla_architecture.png">
   <meta property="og:site_name" content="TeleFuser VLA Architecture">
 
@@ -21,7 +21,7 @@
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:url" content="https://happydog060713.github.io/telefuser-vla/">
   <meta name="twitter:title" content="面向具身闭环控制的 VLA 推理服务架构演进与实践">
-  <meta name="twitter:description" content="基于 TeleFuser 的具身大模型（VLA）推理服务架构演进：从物理仿真边界解耦、语义化动作空间契约，到动静混合 CUDA Graph 降噪加速与无头 MuJoCo 闭环仿真“零气泡”全链路验证。">
+  <meta name="twitter:description" content="基于 TeleFuser 的具身大模型（VLA）推理服务架构演进：从物理仿真边界解耦、语义化动作空间契约，到动静混合 CUDA Graph 降噪加速与无头 MuJoCo 闭环仿真流水线验证。">
   <meta name="twitter:image" content="https://happydog060713.github.io/telefuser-vla/telefuser_vla_architecture.png">
 
   <!-- Favicon -->
@@ -470,8 +470,8 @@
         <h1 class="post-title">面向具身闭环控制的 VLA 推理服务架构演进与实践</h1>
         <p class="subtitle">
           TeleFuser 是一套面向实时生成模型与交互式世界系统的开源推理与服务运行架构。
-          本文深入剖析 TeleFuser 中具身大模型（Vision-Language-Action, VLA）推理服务架构的演进全景：
-          从物理仿真边界解耦、语义化动作空间契约，到动静混合 CUDA Graph 降噪加速与无头 MuJoCo 闭环仿真“零气泡”流水线验证。
+          本文深入剖析 TeleFuser 中具身大模型（Vision-Language-Action, VLA）推理服务架构的演进：
+          从物理仿真边界解耦、语义化动作空间契约，到动静混合 CUDA Graph 降噪加速与无头 MuJoCo 闭环仿真流水线验证。
         </p>
         <div class="metric-badge-bar">
           <div class="metric-title">单卡 H100：实时动作去噪推理与无头 MuJoCo 闭环仿真验证</div>
